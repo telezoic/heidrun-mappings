@@ -2,7 +2,7 @@ def dlg_preview(identifier)
   id = identifier.rpartition(':').last.split('_', 3)
   return nil if id.count != 3
   "http://dlg.galileo.usg.edu/#{id[0]}/#{id[1]}/do-th:#{id[2]}"
-end 
+end
 
 Krikri::Mapper.define(:dlg_dc, :parser => Krikri::OaiDcParser) do
   provider :class => DPLA::MAP::Agent do
@@ -19,7 +19,7 @@ Krikri::Mapper.define(:dlg_dc, :parser => Krikri::OaiDcParser) do
   end
 
   preview :class => DPLA::MAP::WebResource do
-    uri dlg_preview(record.field('xmlns:header', 'xmlns:identifier').first)
+    uri header.field('xmlns:identifier').first_value.map { |i| dlg_preview(i.value) }
   end
 
   originalRecord :class => DPLA::MAP::WebResource do
