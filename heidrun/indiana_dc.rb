@@ -23,46 +23,46 @@ Krikri::Mapper.define(:indiana_dc,
 
   sourceResource :class => DPLA::MAP::SourceResource do
   
-  	  collection :class => DPLA::MAP::Collection, :each => 
-  	  	  header.field('xmlns:header', 'xmlns:setSpec'), :as => :coll do
-  	  	  title coll
-  	  end
+    collection :class => DPLA::MAP::Collection, :each => 
+   	  header.field('xmlns:setSpec'), :as => :coll do
+  	  title coll
+  	end
 
-  	  creator :class => DPLA::MAP::Agent, :each => 	
-  	  	  record.field('dc:creator'), :as => :creator do
-  	  	  providedLabel creator
-  	  end
+    creator :class => DPLA::MAP::Agent, :each => 	
+  	  record.field('dc:creator'), :as => :creator do
+   	  providedLabel creator
+	end
 
-  	  date :class => DPLA::MAP::TimeSpan, :each => 
-  	  	  record.field('dc:date'), :as => :created do
-  	  	  providedLabel created
-  	  end
+  	date :class => DPLA::MAP::TimeSpan, :each => 
+  	  record.field('dc:date'), :as => :created do
+  	  providedLabel created
+  	end
 
-  	  description record.field('dc:description')
+  	description record.field('dc:description')
 
-  	  dcformat record.fields('dc:format', 'dc:type')
+  	dcformat record.fields('dc:format', 'dc:type')
   	  
-  	  genre record.field('dc:type')
+  	genre record.field('dc:type')
 
-  	  language :class => DPLA::MAP::Controlled::Language, :each => 
-  	  	  record.field('dc:language'), :as => :lang do
-  	  	  prefLabel lang
-  	  end
+  	language :class => DPLA::MAP::Controlled::Language, :each => 
+  	  record.field('dc:language'), :as => :lang do
+  	  prefLabel lang
+  	end
 
-  	  spatial :class => DPLA::MAP::Place, :each => 
-  	  	  record.field('dc:coverage'), :as => :place do
-  	  	  providedLabel place
-  	  end
+  	spatial :class => DPLA::MAP::Place, :each => 
+  	  record.field('dc:coverage'), :as => :place do
+  	  providedLabel place
+  	end
 
-  	  rights record.field('dc:rights')
+  	rights record.field('dc:rights')
 
-  	  subject :class => DPLA::MAP::Concept, :each => 	
-  	  	  record.field('dc:subject'), :as => :subject do
-  	  	  providedLabel subject
-  	  end
+  	subject :class => DPLA::MAP::Concept, :each => 	
+  	  record.field('dc:subject'), :as => :subject do
+  	  providedLabel subject
+  	end
 
-  	  title record.field('dc:title')
+  	title record.field('dc:title')
 
-  	  dctype record.field('dc:type')
+  	dctype record.field('dc:type')
   end
 end
