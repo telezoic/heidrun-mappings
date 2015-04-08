@@ -9,11 +9,14 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
   end
 
   isShownAt :class => DPLA::MAP::WebResource do
-    uri record.field('mods:location', 'mods:url').match_attribute(:usage, 'primary display').match_attribute(:access, 'object in context')
+    uri record.field('mods:location', 'mods:url')
+         .match_attribute(:usage, 'primary display')
+         .match_attribute(:access, 'object in context')
   end
 
   preview :class => DPLA::MAP::WebResource do
-    uri record.field('mods:location', 'mods:url').match_attribute(:access, 'preview')
+    uri record.field('mods:location', 'mods:url')
+         .match_attribute(:access, 'preview')
   end
 
   originalRecord :class => DPLA::MAP::WebResource do
@@ -25,19 +28,29 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
     # TODO: Crosswalk says to take collection from OAI set name/description,
     # but we need to be able harvest set titles and populate them somewhere.
     # This will just pull back the setSpec code for now.
-    collection :class => DPLA::MAP::Collection, :each => header.field('xmlns:set_spec'), :as => :coll do
+    collection :class => DPLA::MAP::Collection,
+               :each => header.field('xmlns:set_spec'),
+               :as => :coll do
       title coll
     end
 
-    contributor :class => DPLA::MAP::Agent, :each => record.field('mods:name').select { |name| name['mods:role'].map(&:value).include?('contributor') }, :as => :contrib do
+    contributor :class => DPLA::MAP::Agent,
+                :each => record.field('mods:name')
+                        .select { |name| name['mods:role'].map(&:value).include?('contributor') },
+                :as => :contrib do
       providedLabel contrib.field('mods:namePart')
     end
 
-    creator :class => DPLA::MAP::Agent, :each => record.field('mods:name').select { |name| name['mods:role'].map(&:value).include?('creator') }, :as => :creator_role do
+    creator :class => DPLA::MAP::Agent,
+            :each => record.field('mods:name')
+                    .select { |name| name['mods:role'].map(&:value).include?('creator') },
+            :as => :creator_role do
       providedLabel creator_role.field('mods:namePart')
     end
 
-    date :class => DPLA::MAP::TimeSpan, :each => record.field('mods:originInfo'), :as => :created do
+    date :class => DPLA::MAP::TimeSpan,
+         :each => record.field('mods:originInfo'),
+         :as => :created do
       providedLabel created.field('mods:dateCreated').match_attribute(:keyDate, 'yes')
       self.begin created.field('mods:dateCreated').match_attribute(:point, 'start')
       self.end created.field('mods:dateCreated').match_attribute(:point, 'end')
@@ -47,28 +60,38 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
 
     extent record.field('mods:physicalDescription', 'mods:extent')
 
-    # Selecting non-DCMIType values will be handled in enrichment
-    dcformat record.field('mods:typeOfResource')
+    # non-DCMIType values from type will be handled in enrichment
+    dcformat record.field('mods:physicalDescription', 'mods:form')
 
     genre record.field('mods:physicalDescription', 'mods:form')
 
     identifier record.field('mods:identifier')
 
-    language :class => DPLA::MAP::Controlled::Language, :each => record.field('mods:language', 'mods:languageTerm'), :as => :lang do
+    language :class => DPLA::MAP::Controlled::Language,
+             :each => record.field('mods:language', 'mods:languageTerm'),
+             :as => :lang do
       prefLabel lang
     end
 
-    spatial :class => DPLA::MAP::Place, :each => record.field('mods:subject', 'mods:geographic'), :as => :place do
+    spatial :class => DPLA::MAP::Place,
+            :each => record.field('mods:subject', 'mods:geographic'),
+            :as => :place do
       providedLabel place
     end
 
-    publisher :class => DPLA::MAP::Agent, :each => record.field('mods:name').select { |name| name['mods:role'].map(&:value).include?('publisher') }, :as => :pub do
-      providedLabel pub.field('mods:namePart')
+    publisher :class => DPLA::MAP::Agent,
+              :each => record.field('mods:originInfo'),
+              :as => :publisher do
+      providedLabel publisher.field('mods:publisher')
     end
+
+    relation record.field('mods:relatedItem", "mods:titleInfo", "mods:title')
 
     rights record.field('mods:accessCondition')
 
-    subject :class => DPLA::MAP::Concept, :each => record.field('mods:subject', 'mods:topic'), :as => :subject do
+    subject :class => DPLA::MAP::Concept,
+            :each => record.field('mods:subject', 'mods:topic'),
+            :as => :subject do
       providedLabel subject
     end
 
