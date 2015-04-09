@@ -52,6 +52,7 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
          :each => record.field('mods:originInfo'),
          :as => :created do
       providedLabel created.field('mods:dateCreated').match_attribute(:keyDate, 'yes')
+                     .reject { |date| date.attribute? :point }.match_attribute
       self.begin created.field('mods:dateCreated').match_attribute(:point, 'start')
       self.end created.field('mods:dateCreated').match_attribute(:point, 'end')
     end
@@ -90,7 +91,7 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
     rights record.field('mods:accessCondition')
 
     subject :class => DPLA::MAP::Concept,
-            :each => record.field('mods:subject', 'mods:topic'),
+            :each => record.field('mods:subject'),
             :as => :subject do
       providedLabel subject
     end
