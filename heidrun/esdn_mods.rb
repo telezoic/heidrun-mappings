@@ -86,7 +86,7 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
       providedLabel publisher.field('mods:publisher')
     end
 
-    relation record.field('mods:relatedItem", "mods:titleInfo", "mods:title')
+    relation record.field('mods:relatedItem', 'mods:titleInfo', 'mods:title')
 
     rights record.field('mods:accessCondition')
 
