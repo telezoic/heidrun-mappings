@@ -52,7 +52,7 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
          :each => record.field('mods:originInfo'),
          :as => :created do
       providedLabel created.field('mods:dateCreated').match_attribute(:keyDate, 'yes')
-                     .reject { |date| date.attribute? :point }.match_attribute
+                     .reject { |date| date.attribute? :point }
       self.begin created.field('mods:dateCreated').match_attribute(:point, 'start')
       self.end created.field('mods:dateCreated').match_attribute(:point, 'end')
     end
