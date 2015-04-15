@@ -13,7 +13,7 @@ Krikri::Mapper.define(:uw_qdc,
   end
 
   dataProvider :class => DPLA::MAP::Agent do
-    providedLabel record.field('dc:source').first_value
+    uri 'http://dp.la/api/contributor/washington'
   end
 
   isShownAt :class => DPLA::MAP::WebResource do
@@ -31,7 +31,7 @@ Krikri::Mapper.define(:uw_qdc,
 
   sourceResource :class => DPLA::MAP::SourceResource do
     collection :class => DPLA::MAP::Collection,
-               :each => record.field('dcterms:isPartOf'),
+               :each => record.fields('dcterms:isPartOf', 'dcterms:provenance'),
                :as => :coll do
       title coll
     end
@@ -50,7 +50,7 @@ Krikri::Mapper.define(:uw_qdc,
 
     description record.field('dc:description')
 
-    dcformat record.field('dc:type')
+    dcformat record.field('dc:format')
 
     identifier record.field('dc:identifier')
 
@@ -61,10 +61,12 @@ Krikri::Mapper.define(:uw_qdc,
     end
 
     spatial :class => DPLA::MAP::Place,
-            :each => record.field('dc:coverage'),
+            :each => record.fields('dc:coverage', 'dcterms:spatial'),
             :as => :place do
       providedLabel place
     end
+
+    relation record.field('dc:relation')
 
     rights record.field('dc:rights')
 
