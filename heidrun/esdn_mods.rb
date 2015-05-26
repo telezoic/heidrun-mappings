@@ -24,12 +24,16 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
   end
 
   sourceResource :class => DPLA::MAP::SourceResource do
+    alternative record.field('mods:titleInfo')
+                      .match_attribute(:type, 'alternative')
+                      .field('mods:title')
+
     ##
-    # TODO: Crosswalk says to take collection from OAI set name/description,
-    # but we need to be able harvest set titles and populate them somewhere.
-    # This will just pull back the setSpec code for now.
+    # TODO: implement collection/set harvester and enrichment to complete
+    # the metadata required for collections. This just grabs the set's
+    # identifier from the OAI-PMH setSpec in the record header.
     collection :class => DPLA::MAP::Collection,
-               :each => header.field('xmlns:set_spec'),
+               :each => header.field('xmlns:setSpec'),
                :as => :coll do
       title coll
     end
@@ -96,7 +100,11 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
       providedLabel subject
     end
 
-    title record.field('mods:titleInfo', 'mods:title')
+    # Note: this rejects all mods:titleInfo elements where the @type
+    # attribute is present. Discussed w/ Gretchen and Tom on 5/26/15. 
+    title record.field('mods:titleInfo')
+                .reject { |t| t.attribute? :type }
+                .field('mods:title')
 
     # Selecting DCMIType-only values will be handled in enrichment
     dctype record.field('mods:typeOfResource')
