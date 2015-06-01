@@ -59,6 +59,7 @@ Krikri::Mapper.define(:mdl_map,
   	  prefLabel lang
   	  self.providedLabel('record', 'sourceResource', 'language', 'name')
   	end
+  	#made a guess here, but probably wrong; will need to discuss at checkin
   	
    	publisher :class => DPLA::MAP::Agent, :each => 	
   	  record.field('record', 'sourceResource', 'publisher'), :as => :publisher 
