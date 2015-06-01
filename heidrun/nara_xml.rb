@@ -1,13 +1,15 @@
-Krikri::Mapper.define(:mdl_map,
-  :parser => Krikri::JsonParser) do
+Krikri::Mapper.define(:nara_xml,
+  :parser => Krikri::) do
   provider :class => DPLA::MAP::Agent do
-    uri 'http://dp.la/api/contributor/mdl'
-    label record.field('record', 'provider')
+    uri 'http://dp.la/api/contributor/nara'
+    label 'National Archives and Records Administration'
   end
 
-  dataProvider :class => DPLA::MAP::Agent do
-    providedLabel record.field('record', 'dataProvider')
+  dataProvider :class => DPLA::MAP::Agent, :each =>
+    record.field('copyStatus').select { |name| name['termName'].map(&:value).include?('Reproduction-Reference') }, :as => :provid do
+      providedLabel provid.field('referenceUnitArray', 'referenceUnit', 'termName')
     end
+    # this is probably totally wrong...
 
   isShownAt :class => DPLA::MAP::WebResource do
     uri record.field('record', 'isShownAt')
@@ -24,11 +26,10 @@ Krikri::Mapper.define(:mdl_map,
   sourceResource :class => DPLA::MAP::SourceResource do
   
     collection :class => DPLA::MAP::Collection, :each => 
-   	  header.field('record', 'sourceResource', 'collection', 'title'), :as => :coll do
+   	  header.field('record', 'sourceResource', 'collection', 'name'), :as => :coll do
   	  title coll
   	  self.description coll.field('record', 'sourceResource', 'collection', 'description', 'dc', 'description')
   	end
-  	#need to verify this mapping with MDL
 
     contributor :class => DPLA::MAP::Agent, :each=>
     	record.field('record', 'sourceResource', 'contributor'), :as => :contributor
@@ -57,8 +58,8 @@ Krikri::Mapper.define(:mdl_map,
   	language :class => DPLA::MAP::Controlled::Language, :each => 
   	  record.field('record', 'sourceResource', 'language', 'iso639_3'), :as => :lang do
   	  prefLabel lang
-  	  self.providedLabel('record', 'sourceResource', 'language', 'name')
   	end
+  	#also needs ('record', 'sourceResource', 'language', 'name')
   	
    	publisher :class => DPLA::MAP::Agent, :each => 	
   	  record.field('record', 'sourceResource', 'publisher'), :as => :publisher 
@@ -70,9 +71,9 @@ Krikri::Mapper.define(:mdl_map,
   	  record.field('record', 'sourceResource', 'spatial', 'name'), :as => :place do
   	  providedLabel place
   	  self.lat ('record', 'sourceResource', 'spatial', 'coordinates')
+  	  self.long('record', 'sourceResource', 'spatial', 'coordinates')
   	end
-#need to figure out how to map. their records have name, county, state, coordinates, and country sub-fields under spatial
-  	
+
   	rights record.field('record', 'sourceResource', 'rights')
 
   	subject :class => DPLA::MAP::Concept, :each => 	
