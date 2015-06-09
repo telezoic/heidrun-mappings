@@ -1,5 +1,4 @@
-Krikri::Mapper.define(:mdl_map,
-  :parser => Krikri::JsonParser) do
+Krikri::Mapper.define(:mdl_map, :parser => Krikri::JsonParser) do
   provider :class => DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/mdl'
     label record.field('record', 'provider')
@@ -7,7 +6,7 @@ Krikri::Mapper.define(:mdl_map,
 
   dataProvider :class => DPLA::MAP::Agent do
     providedLabel record.field('record', 'dataProvider')
-    end
+  end
 
   isShownAt :class => DPLA::MAP::WebResource do
     uri record.field('record', 'isShownAt')
@@ -15,7 +14,7 @@ Krikri::Mapper.define(:mdl_map,
 
   preview :class => DPLA::MAP::WebResource do
     uri record.field('record' 'object')
-    
+  end
 
   originalRecord :class => DPLA::MAP::WebResource do
     uri record_uri
@@ -23,26 +22,21 @@ Krikri::Mapper.define(:mdl_map,
 
   sourceResource :class => DPLA::MAP::SourceResource do
   
-    collection :class => DPLA::MAP::Collection, :each => 
-   	  header.field('record', 'sourceResource', 'collection'), :as => :coll do
+    collection :class => DPLA::MAP::Collection, :each => header.field('record', 'sourceResource', 'collection'), :as => :coll do
   	  title coll.field('title')
   	  self.description coll.field('description', 'dc', 'description')
   	end
   	#need to verify this mapping with MDL
 
-    contributor :class => DPLA::MAP::Agent, :each=>
-    	record.field('record', 'sourceResource', 'contributor'), :as => :contributor
-    	do
+    contributor :class => DPLA::MAP::Agent, :each=> record.field('record', 'sourceResource', 'contributor'), :as => :contributor do
     	providedLabel contributor
     end
     
-  	creator :class => DPLA::MAP::Agent, :each => 	
-  	  record.field('record', 'sourceResource', 'creator'), :as => :creator do
+  	creator :class => DPLA::MAP::Agent, :each => record.field('record', 'sourceResource', 'creator'), :as => :creator do
    	  providedLabel creator
-	end
+	  end
 
-  	date :class => DPLA::MAP::TimeSpan, :each => 
-  	  record.field('record', 'sourceResource', 'date', 'displayDate'), :as => :created do
+  	date :class => DPLA::MAP::TimeSpan, :each => record.field('record', 'sourceResource', 'date', 'displayDate'), :as => :created do
   	  providedLabel created
   	  self.begin created.field('record', 'sourceResource', 'date', 'begin')
   	  self.end created.field('record', 'sourceResource', 'date', 'end')
@@ -54,21 +48,17 @@ Krikri::Mapper.define(:mdl_map,
 
   	genre record.field('record', 'sourceResource', 'type')
   	
-  	language :class => DPLA::MAP::Controlled::Language, :each => 
-  	  record.field('record', 'sourceResource', 'language'), :as => :lang do
+  	language :class => DPLA::MAP::Controlled::Language, :each => record.field('record', 'sourceResource', 'language'), :as => :lang do
   	  prefLabel lang.field('iso639_3')
   	  self.providedLabel lang.field('name')
   	end
   	#made a guess here, but probably wrong; will need to discuss at checkin
   	
-   	publisher :class => DPLA::MAP::Agent, :each => 	
-  	  record.field('record', 'sourceResource', 'publisher'), :as => :publisher 
-  	  do
+   	publisher :class => DPLA::MAP::Agent, :each => record.field('record', 'sourceResource', 'publisher'), :as => :publisher do
    	  providedLabel publisher
-	end
+	  end
 	
-  	spatial :class => DPLA::MAP::Place, :each => 
-  	  record.field('record', 'sourceResource', 'spatial'), :as => :place do
+  	spatial :class => DPLA::MAP::Place, :each => record.field('record', 'sourceResource', 'spatial'), :as => :place do
   	  providedLabel place.field('name')
   	  self.lat place.field('coordinates')
   	end
@@ -76,8 +66,7 @@ Krikri::Mapper.define(:mdl_map,
   	
   	rights record.field('record', 'sourceResource', 'rights')
 
-  	subject :class => DPLA::MAP::Concept, :each => 	
-  	  record.field('record', 'sourceResource', 'subject', 'name'), :as => :subject do
+  	subject :class => DPLA::MAP::Concept, :each => record.field('record', 'sourceResource', 'subject', 'name'), :as => :subject do
   	  providedLabel subject
   	end
 
