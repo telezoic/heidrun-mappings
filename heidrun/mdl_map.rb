@@ -24,9 +24,9 @@ Krikri::Mapper.define(:mdl_map,
   sourceResource :class => DPLA::MAP::SourceResource do
   
     collection :class => DPLA::MAP::Collection, :each => 
-   	  header.field('record', 'sourceResource', 'collection', 'title'), :as => :coll do
-  	  title coll
-  	  self.description coll.field('record', 'sourceResource', 'collection', 'description', 'dc', 'description')
+   	  header.field('record', 'sourceResource', 'collection'), :as => :coll do
+  	  title coll.field('title')
+  	  self.description coll.field('description', 'dc', 'description')
   	end
   	#need to verify this mapping with MDL
 
@@ -55,9 +55,9 @@ Krikri::Mapper.define(:mdl_map,
   	genre record.field('record', 'sourceResource', 'type')
   	
   	language :class => DPLA::MAP::Controlled::Language, :each => 
-  	  record.field('record', 'sourceResource', 'language', 'iso639_3'), :as => :lang do
-  	  prefLabel lang
-  	  self.providedLabel('record', 'sourceResource', 'language', 'name')
+  	  record.field('record', 'sourceResource', 'language'), :as => :lang do
+  	  prefLabel lang.field('iso639_3')
+  	  self.providedLabel lang.field('name')
   	end
   	#made a guess here, but probably wrong; will need to discuss at checkin
   	
@@ -68,9 +68,9 @@ Krikri::Mapper.define(:mdl_map,
 	end
 	
   	spatial :class => DPLA::MAP::Place, :each => 
-  	  record.field('record', 'sourceResource', 'spatial', 'name'), :as => :place do
-  	  providedLabel place
-  	  self.lat ('record', 'sourceResource', 'spatial', 'coordinates')
+  	  record.field('record', 'sourceResource', 'spatial'), :as => :place do
+  	  providedLabel place.field('name')
+  	  self.lat place.field('coordinates')
   	end
 #need to figure out how to map. their records have name, county, state, coordinates, and country sub-fields under spatial
   	
