@@ -24,7 +24,7 @@ Krikri::Mapper.define(:mdl_map, :parser => Krikri::JsonParser) do
   
     collection :class => DPLA::MAP::Collection, :each => header.field('record', 'sourceResource', 'collection'), :as => :coll do
       title coll.field('title')
-      self.description coll.field('description', 'dc', 'description')
+      description coll.field('description', 'dc', 'description')
     end
     #need to verify this mapping with MDL
 
@@ -50,7 +50,7 @@ Krikri::Mapper.define(:mdl_map, :parser => Krikri::JsonParser) do
     
     language :class => DPLA::MAP::Controlled::Language, :each => record.field('record', 'sourceResource', 'language'), :as => :lang do
       prefLabel lang.field('iso639_3')
-      self.providedLabel lang.field('name')
+      providedLabel lang.field('name')
     end
     #made a guess here, but probably wrong; will need to discuss at checkin
     
@@ -60,7 +60,7 @@ Krikri::Mapper.define(:mdl_map, :parser => Krikri::JsonParser) do
   
     spatial :class => DPLA::MAP::Place, :each => record.field('record', 'sourceResource', 'spatial'), :as => :place do
       providedLabel place.field('name')
-      self.lat place.field('coordinates')
+      lat place.field('coordinates')
     end
 #need to figure out how to map. their records have name, county, state, coordinates, and country sub-fields under spatial
     
