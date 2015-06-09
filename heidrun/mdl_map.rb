@@ -22,7 +22,7 @@ Krikri::Mapper.define(:mdl_map, :parser => Krikri::JsonParser) do
 
   sourceResource :class => DPLA::MAP::SourceResource do
   
-    collection :class => DPLA::MAP::Collection, :each => header.field('record', 'sourceResource', 'collection'), :as => :coll do
+    collection :class => DPLA::MAP::Collection, :each => record.field('record', 'sourceResource', 'collection'), :as => :coll do
       title coll.field('title')
       description coll.field('description', 'dc', 'description')
     end
