@@ -31,7 +31,7 @@ Krikri::Mapper.define(:uw_qdc,
 
   sourceResource :class => DPLA::MAP::SourceResource do
     collection :class => DPLA::MAP::Collection,
-               :each => record.fields('dcterms:isPartOf', 'dcterms:provenance'),
+               :each => record.fields('xmlns:header', 'xmlns:setSpec'),
                :as => :coll do
       title coll
     end
@@ -66,7 +66,7 @@ Krikri::Mapper.define(:uw_qdc,
       providedLabel place
     end
 
-    relation record.field('dc:relation')
+    relation record.fields('dc:relation', 'dcterms:isPartOf')
 
     rights record.field('dc:rights')
 
@@ -76,6 +76,12 @@ Krikri::Mapper.define(:uw_qdc,
       providedLabel subject
     end
 
+    temporal :class =>DPLA::MAP::TimeSpan,
+    	     :each => record.field('dcterms:temporal'),
+             :as => :temporal do
+      providedLabel temporal
+    end
+    
     title record.field('dc:title')
 
     dctype record.field('dc:type')
