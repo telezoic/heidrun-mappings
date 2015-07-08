@@ -16,10 +16,6 @@ Krikri::Mapper.define(:scdl_qdc,
 
   preview :class => DPLA::MAP::WebResource do
     uri record.field('dcterms:hasFormat')
-
-    # Per discussion with Gretchen on 1/28/15, we assume that dc:format will
-    # only contain values to be associated with `edm:preview`. We could add
-    # a mime-type checker enrichment here if we wanted.
     dcformat record.field('dc:format')
   end
 
@@ -49,12 +45,8 @@ Krikri::Mapper.define(:scdl_qdc,
     extent record.field('dcterms:extent')
 
     dcformat record.field('dcterms:medium')
-
-    # Per conversation with Gretchen on 1/18/2015, genre should be populated
-    # during enrichment, not at mapping. Values should be taken from dcformat
-    # and compared with our list of preferred genre terms.
-    #
-    # genre record.field('dcterms:medium')
+    
+    genre record.field('dcterms:medium')
 
     language :class => DPLA::MAP::Controlled::Language, :each => record.field('dc:language'), :as => :lang do
       prefLabel lang
@@ -66,7 +58,9 @@ Krikri::Mapper.define(:scdl_qdc,
 
     relation record.field('dc:source')
 
-    rights record.field('dc:rights')
+    rights record.fields('dc:rights', 'dcterms:accessRights')
+    
+    rightsHolder record.field('dcterms:rightsholder')
 
     subject :class => DPLA::MAP::Concept, :each => record.field('dc:subject'), :as => :subject do
       providedLabel subject
@@ -74,7 +68,6 @@ Krikri::Mapper.define(:scdl_qdc,
 
     title record.field('dc:title')
 
-    # Selecting only DCMIType values will be handled in enrichment
     dctype record.field('dc:type')
   end
 end
