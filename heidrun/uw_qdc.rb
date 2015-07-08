@@ -31,7 +31,9 @@ Krikri::Mapper.define(:uw_qdc,
 
   sourceResource :class => DPLA::MAP::SourceResource do
     collection :class => DPLA::MAP::Collection,
-               :each => record.fields('xmlns:header', 'xmlns:setSpec'),
+               # setSpec is set_spec due to a bug in Krikri;
+               # revert this after the patch is deployed
+               :each => record.fields('xmlns:header', 'xmlns:set_spec'), 
                :as => :coll do
       title coll
     end
