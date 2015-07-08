@@ -33,7 +33,9 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
     # the metadata required for collections. This just grabs the set's
     # identifier from the OAI-PMH setSpec in the record header.
     collection :class => DPLA::MAP::Collection,
-               :each => header.field('xmlns:setSpec'),
+               # setSpec is set_spec due to a bug in Krikri;
+               # revert this after the patch is deployed
+               :each => header.field('xmlns:set_spec'),
                :as => :coll do
       title coll
     end
