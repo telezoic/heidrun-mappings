@@ -1,3 +1,9 @@
+
+def caribbean?(parser_value)
+  parser_value.value.include?('Digital Library of the Caribbean')
+end
+
+
 Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
 
   provider :class => DPLA::MAP::Agent do
@@ -12,19 +18,14 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
     providedLabel dataP.field('marc:subfield').match_attribute(:code, 'a')
   end
 
-  # Not sure how to limit this to only those fields with the value "Digital
-  # Library of the Caribbean." (the period is included in the MARC record)
-  # Guessing here based on something in the ESDN map.  --GG
   intermediateProvider :class => DPLA::MAP::Agent,
                        :each => record.field('marc:datafield')
-                                      .match_attribute(:tag, '830'),
-                       :as => :interP do
-    # FIXME:  Produces multiple providedLabels where the value is 'false'
-    providedLabel interP.field('marc:subfield')
-                        .match_attribute(:code, 'a')
-                        .select do |code_a|
-                          code_a.include?('Digital Library of the Caribbean.')
-                        end
+                                      .match_attribute(:tag, '830')
+                                      .field('marc:subfield')
+                                      .match_attribute(:code, 'a')
+                                      .select { |a| caribbean?(a) },
+                       :as => :ip do
+    providedLabel ip
   end
   
   isShownAt :class => DPLA::MAP::WebResource,
