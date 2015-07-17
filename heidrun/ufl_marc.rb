@@ -1,13 +1,13 @@
-Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MarcParser) do
+Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
 
   provider :class => DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/ufl'
     label 'University of Florida Libraries'
   end
 
-  dataProvider :class => DPLA::MAP::Agent do
+  dataProvider :class => DPLA::MAP::Agent,
                :each => record.field('marc:datafield')
-                              .match_attribute(:tag, '535')
+                              .match_attribute(:tag, '535'),
                :as => :dataP do
     providedLabel dataP.field('marc:subfield').match_attribute(:code, 'a')
   end
@@ -15,10 +15,10 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MarcParser) do
   # Not sure how to limit this to only those fields with the value "Digital
   # Library of the Caribbean." (the period is included in the MARC record)
   # Guessing here based on something in the ESDN map.  --GG
-  intermediateProvider :class => DPLA::MAP::Agent do
+  intermediateProvider :class => DPLA::MAP::Agent,
                        :each => record.field('marc:datafield')
-                                      .match_attribute(:tag, '830')
-                       :as interP do
+                                      .match_attribute(:tag, '830'),
+                       :as => interP do
     providedLabel interP.field('marc:subfield')
                         .match_attribute(:code, 'a')
                         .select do |i|
@@ -27,17 +27,17 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MarcParser) do
                         end
   end
   
-  isShownAt :class => DPLA::MAP::WebResource do
+  isShownAt :class => DPLA::MAP::WebResource,
             :each => record.field('marc:datafield')
-                           .match_attribute(:tag, '856')
+                           .match_attribute(:tag, '856'),
             :as => :URI do
     uri URI.field('marc:subfield').match_attribute(:code, 'u')
   end
 
-  preview :class => DPLA::MAP::WebResource do
+  preview :class => DPLA::MAP::WebResource,
           :each => record.field('marc:datafield')
-                         .match_attribute(:tag, '992')
-            :as => :thumb do
+                         .match_attribute(:tag, '992'),
+          :as => :thumb do
     uri thumb.field('marc:subfield').match_attribute(:code, 'a')
   end
 
@@ -49,7 +49,7 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MarcParser) do
 
     collection :class => DPLA::MAP::Collection, 
                :each => record.field('marc:datafield')
-                              .match_attribute(:tag, '830')
+                              .match_attribute(:tag, '830'),
                :as => :coll do
       title coll.field('marc:subfield').match_attribute(:code, 'a')
     end
@@ -59,22 +59,24 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MarcParser) do
 
     #creator 
 
-    date :class => DPLA::MAP::TimeSpan do
+    date :class => DPLA::MAP::TimeSpan,
          :each => record.field('marc:datafield')
-                        .match_attribute(:tag, '260')
+                        .match_attribute(:tag, '260'),
          :as => :date do
       providedLabel date.field('marc:subfield').match_attribute(:code, 'c')
     end
 
     #description 
 
-    extent record.fields([('marc:datafield')
-                  .match_attribute(:tag, '300')
-                  .field('marc:subfield').match_attribute(:code, 'a')],
-                  [('marc:datafield').match_attribute(:tag, '300')
-                  .field('marc:subfield').match_attribute(:code, 'c')],
-                  [('marc:datafield').match_attribute(:tag, '340')
-                  .field('marc:subfield').match_attribute(:code, 'b')])
+    # FIXME:
+    # extent record.fields([('marc:datafield')
+    #               .match_attribute(:tag, '300')
+    #               .field('marc:subfield').match_attribute(:code, 'a')],
+    #               [('marc:datafield').match_attribute(:tag, '300')
+    #               .field('marc:subfield').match_attribute(:code, 'c')],
+    #               [('marc:datafield').match_attribute(:tag, '340')
+    #               .field('marc:subfield').match_attribute(:code, 'b')])
+
     #dcformat 
     
     #genre 
@@ -87,7 +89,7 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MarcParser) do
 
     publisher :class => DPLA::MAP::Agent, 
               :each => record.field('marc:datafield')
-                             .match_attribute(:tag, '260')
+                             .match_attribute(:tag, '260'),
               :as => :pub do
       providedLabel pub.field('marc:subfield').match_attribute(:code, 'b')
     end
