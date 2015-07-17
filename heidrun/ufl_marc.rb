@@ -18,20 +18,20 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
   intermediateProvider :class => DPLA::MAP::Agent,
                        :each => record.field('marc:datafield')
                                       .match_attribute(:tag, '830'),
-                       :as => interP do
+                       :as => :interP do
+    # FIXME:  Produces multiple providedLabels where the value is 'false'
     providedLabel interP.field('marc:subfield')
                         .match_attribute(:code, 'a')
-                        .select do |i|
-                          i.map(&:value)
-                           .include?('Digital Library of the Caribbean.')
+                        .select do |code_a|
+                          code_a.include?('Digital Library of the Caribbean.')
                         end
   end
   
   isShownAt :class => DPLA::MAP::WebResource,
             :each => record.field('marc:datafield')
                            .match_attribute(:tag, '856'),
-            :as => :URI do
-    uri URI.field('marc:subfield').match_attribute(:code, 'u')
+            :as => :the_uri do
+    uri the_uri.field('marc:subfield').match_attribute(:code, 'u')
   end
 
   preview :class => DPLA::MAP::WebResource,
