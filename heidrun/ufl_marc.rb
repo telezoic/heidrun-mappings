@@ -3,42 +3,7 @@ def caribbean?(parser_value)
   parser_value.value.include?('Digital Library of the Caribbean')
 end
 
-# FIXME:  This is the original mapping that Gretchen was trying to express:
-# It's clear what needs to be mapped, but I can not figure out how to go about
-# it given the restraints of the DSL and my inability to debug the code below
-# and on line 106. --MB
-#
-# extent record.fields(
-#             [('marc:datafield').match_attribute(:tag, '300')
-#                                .field('marc:subfield')
-#                                .match_attribute(:code, 'a')],
-#             [('marc:datafield').match_attribute(:tag, '300')
-#                                .field('marc:subfield')
-#                                .match_attribute(:code, 'c')],
-#             [('marc:datafield').match_attribute(:tag, '340')
-#                                .field('marc:subfield')
-#                                .match_attribute(:code, 'b')]
-# )
-def extent_val(parser_value)
-  return nil unless parser_value.node.attributes.include?('tag')
-  if parser_value.node.attributes['tag'].value == '300'
-    parser_value.node.children.each do |c|
-      next unless c.attributes.include?('code')
-      if ['a', 'c'].include?(c.attributes['code'].value)
-        return c.text
-      end
-    end
-  elsif parser_value.node.attributes['tag'].value == '340'
-    parser_value.node.children.each do |c|
-      next unless c.attributes.include?('code')
-      return c.text if c.attributes['code'].value == 'b'
-    end
-  end
-end
-
-
 Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
-
   provider :class => DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/ufl'
     label 'University of Florida Libraries'
@@ -102,10 +67,14 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
 
     #description 
 
-    # FIXME:  does not work.
-    extent record.field('marc:datafield').map { |df| extent_val(df) }
-
-    #dcformat 
+    extent record.field('marc:datafield')
+            .match_attribute(:tag) { |tag| tag == '300' || tag == '340' }
+            .select { |df| (df.tag == '300' && 
+                           (!df['marc:subfield'].match_attribute(:code, 'a').empty? || 
+                            !df['marc:subfield'].match_attribute(:code, 'c').empty?)) ||
+                      (df.tag == '340' && 
+                       !df['marc:subfield'].match_attribute(:code, 'b').empty?) }
+            .field('marc:subfield')
     
     #genre 
 
