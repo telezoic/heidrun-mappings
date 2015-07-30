@@ -85,7 +85,7 @@ Krikri::Mapper.define(:ncdhc, :parser => Krikri::ModsParser) do
     rights record.field('mods:accessCondition')
 
     subject :class => DPLA::MAP::Concept, 
-    	    :each => record.field('mods:subject'), 
+    	    :each => record.field('mods:subject', 'mods:topic'), 
     	    :as => :subject do
       providedLabel subject
     end
