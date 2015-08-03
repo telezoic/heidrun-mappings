@@ -10,8 +10,8 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
 
   isShownAt :class => DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
-         .match_attribute(:usage, 'primary')
-         .match_attribute(:access, 'object in context')
+        .match_attribute(:usage, 'primary')
+        .match_attribute(:access, 'object in context')
     dcformat record.field('mods:physicalDescription', 
                           'mods:internetMediaType')
     rights record.field('mods:accessCondition')
@@ -33,14 +33,13 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
   end
 
   sourceResource :class => DPLA::MAP::SourceResource do
-    alternative record.field('mods:titleInfo')
-                 .match_attribute(:type, 'alternative')
-                 .field('mods:title')
+    alternative record.field('mods:titleInfo','mods:title')
+                      .match_attribute(:type, 'alternative')
 
     collection :class => DPLA::MAP::Collection,
                :each => record.field('mods:relatedItem')
-               	       .match_attribute(:type, 'host')
-               	       .match_attribute(:displayLabel, 'Project'),
+                              .match_attribute(:type, 'host')
+                              .match_attribute(:displayLabel, 'Project'),
                :as => :coll do
       title coll.field('mods:titleInfo', 'mods:title')
       description coll.field('mods:abstract')
@@ -48,14 +47,14 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
 
     contributor :class => DPLA::MAP::Agent,
                 :each => record.field('mods:name')
-                        .select { |name| name['mods:role'].map(&:value).include?('contributor') },
+                        .select { |name| name['mods:role'].field('mods:roleTerm').map(&:value).include?('Contributor') },
                 :as => :contrib do
       providedLabel contrib.field('mods:namePart')
     end
     
     creator :class => DPLA::MAP::Agent,
             :each => record.field('mods:name')
-                    .select { |name| name['mods:role'].map(&:value).include?('creator') },
+                    .select { |name| name['mods:role'].field('mods:roleTerm').map(&:value).include?('Creator') },
             :as => :creator_role do
       providedLabel creator_role.field('mods:namePart')
     end
@@ -63,7 +62,12 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
     date :class => DPLA::MAP::TimeSpan,
          :each => record.field('mods:originInfo'),
          :as => :created do
-      providedLabel created.field('mods:dateCreated')
+      
+      providedLabel created.field('mods:dateCreated').match_attribute(:keyDate, 'yes')
+                     .reject_attribute(:point)
+      
+      self.begin created.field('mods:dateCreated').match_attribute(:point, 'start')
+      self.end created.field('mods:dateCreated').match_attribute(:point, 'end')
     end
 
     description record.field('mods:abstract')
@@ -80,16 +84,18 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
 
     language :class => DPLA::MAP::Controlled::Language,
              :each => record.field('mods:language', 'mods:languageTerm')
-             	     .match_attribute(:type, 'code')
-             	     .match_attribute(:authority, 'iso639-2b'),
+                            .match_attribute(:type, 'code')
+                            .match_attribute(:authority, 'iso639-2b'),
              :as => :lang do
       providedLabel lang
     end
 
     spatial :class => DPLA::MAP::Place,
             :each => record.field('mods:subject')
-                    .select { |val| val.child?('mods:geographic') },
+                    .select { |val| val.child?('mods:geographic') || 
+                              val.child?('mods:cartographics') },
             :as => :place do
+
       providedLabel place.field('mods:geographic')
       lat place.field('mods:cartographics', 'mods:coordinates')
 
@@ -100,50 +106,56 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
     end
     
     publisher :class => DPLA::MAP::Agent,
-              :each => record.field('mods:originInfo'),
-              :as => :publisher do
-      providedLabel publisher.field('mods:publisher')
+              :each => record.field('mods:originInfo','mods:publisher'),
+              :as => :origin_publisher do
+      providedLabel origin_publisher
     end
 
-    # these (and other) `#reject` calls can be simplified with Krikri#175, e.g.:
-    #   .reject_attribute(:type, 'isReferencedBy')
     relation record.field('mods:relatedItem')
-              .reject { |rights| rights.try(:type) == 'isReferencedBy' }
-              .reject { |rights| rights.try(:type) == 'references' }
-    	      .field('mods:titleInfo')
-              .fields('mods:url', 'mods:title')
+            .reject_attribute(:type, 'isReferencedBy')
+            .reject_attribute(:type, 'references')
+            .reject_attribute(:displayLabel, 'Project')
+            .field('mods:titleInfo')
+            .fields('mods:url', 'mods:title')
     
     isReplacedBy record.field('mods:relatedItem')
-    		  .match_attribute(:type, 'isReferencedBy')
-    	          .field('mods:titleInfo')
-                  .fields('mods:url', 'mods:title')
+                .match_attribute(:type, 'isReferencedBy')
+                .field('mods:titleInfo')
+                .fields('mods:url', 'mods:title')
     
     replaces record.field('mods:relatedItem')
-    	      .match_attribute(:type, 'references')
-    	      .field('mods:titleInfo')
-              .fields('mods:url', 'mods:title')
+            .match_attribute(:type, 'references')
+            .field('mods:titleInfo')
+            .fields('mods:url', 'mods:title')
     
     rights record.field('mods:accessCondition')
-            .reject { |rights| rights.try(:displayLabel) == 'Digital Object Rights' }
+            .reject_attribute(:displayLabel, 'Digital Object Rights')
 
     subject :class => DPLA::MAP::Concept,
             :each => record.field('mods:subject')
                     .reject { |v| v.child?('mods:geographic') }
-                    .reject { |v| v.child?('mods:temporal') },
+                    .reject { |v| v.child?('mods:temporal') }
+                    .reject { |v| v.child?('mods:cartographics') },
             :as => :subject do
       providedLabel subject
     end
     
     temporal :class => DPLA::MAP::TimeSpan,
-    	     :each => record.field('mods:subject', 'mods:temporal'),
+             :each => record.field('mods:subject', 'mods:temporal'),
              :as => :date_string do
       providedLabel date_string
     end
 
     title record.field('mods:titleInfo')
-           .reject { |titleInfo| titleInfo.try(:type) == 'alternative' }
+           .reject_attribute(:type, 'alternative')
            .field('mods:title')
 
-    dctype record.field('mods:typeOfResource')
+    dctype record.map { |r|
+      if r.child?('mods:typeOfResource') 
+        r['mods:typeOfResource'].map(&:value)
+      else
+        r['mods:format'].map(&:value)
+      end
+    }.first
   end
 end
