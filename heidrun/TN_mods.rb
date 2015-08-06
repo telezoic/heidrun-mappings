@@ -47,14 +47,20 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
 
     contributor :class => DPLA::MAP::Agent,
                 :each => record.field('mods:name')
-                        .select { |name| name['mods:role'].field('mods:roleTerm').map(&:value).include?('Contributor') },
+                        .select { |name| name['mods:role']
+                                  .field('mods:roleTerm')
+                                  .map { |v| v.value.downcase }
+                                  .include?('contributor') },
                 :as => :contrib do
       providedLabel contrib.field('mods:namePart')
     end
     
     creator :class => DPLA::MAP::Agent,
             :each => record.field('mods:name')
-                    .select { |name| name['mods:role'].field('mods:roleTerm').map(&:value).include?('Creator') },
+                    .select { |name| name['mods:role']
+                              .field('mods:roleTerm')
+                              .map { |v| v.value.downcase }
+                              .include?('creator') },
             :as => :creator_role do
       providedLabel creator_role.field('mods:namePart')
     end
