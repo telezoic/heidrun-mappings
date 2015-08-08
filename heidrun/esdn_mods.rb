@@ -42,25 +42,27 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
 
     contributor :class => DPLA::MAP::Agent,
                 :each => record.field('mods:name')
-                        .select { |name| name['mods:role'].map(&:value).include?('contributor') },
+                        .select { |name| name['mods:role'].map { |v| v.value.downcase }
+                                  .include?('contributor') },
                 :as => :contrib do
       providedLabel contrib.field('mods:namePart')
     end
 
     creator :class => DPLA::MAP::Agent,
             :each => record.field('mods:name')
-                    .select { |name| name['mods:role'].map(&:value).include?('creator') },
+                    .select { |name| name['mods:role'].map { |v| v.value.downcase }
+                              .include?('creator') },
             :as => :creator_role do
       providedLabel creator_role.field('mods:namePart')
     end
 
     date :class => DPLA::MAP::TimeSpan,
-         :each => record.field('mods:originInfo'),
+         :each => record.field('mods:originInfo', 'mods:dateCreated'),
          :as => :created do
-      providedLabel created.field('mods:dateCreated').match_attribute(:keyDate, 'yes')
+      providedLabel created.match_attribute(:keyDate, 'yes')
                      .reject { |date| date.attribute? :point }
-      self.begin created.field('mods:dateCreated').match_attribute(:point, 'start')
-      self.end created.field('mods:dateCreated').match_attribute(:point, 'end')
+      self.begin created.match_attribute(:point, 'start')
+      self.end created.match_attribute(:point, 'end')
     end
 
     description record.field('mods:note').match_attribute(:type, 'content')
@@ -77,7 +79,7 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
     language :class => DPLA::MAP::Controlled::Language,
              :each => record.field('mods:language', 'mods:languageTerm'),
              :as => :lang do
-      prefLabel lang
+      providedLabel lang
     end
 
     spatial :class => DPLA::MAP::Place,
@@ -87,9 +89,9 @@ Krikri::Mapper.define(:esdn_mods, :parser => Krikri::ModsParser) do
     end
 
     publisher :class => DPLA::MAP::Agent,
-              :each => record.field('mods:originInfo'),
+              :each => record.field('mods:originInfo', 'mods:publisher'),
               :as => :publisher do
-      providedLabel publisher.field('mods:publisher')
+      providedLabel publisher
     end
 
     relation record.field('mods:relatedItem', 'mods:titleInfo', 'mods:title')
