@@ -10,13 +10,13 @@ Krikri::Mapper.define(:ncdhc, :parser => Krikri::ModsParser) do
 
   isShownAt :class => DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
-    	 .match_attribute(:usage, 'primary display')
-    	 .match_attribute(:access, 'object in context')
+         .match_attribute(:usage, 'primary display')
+         .match_attribute(:access, 'object in context')
   end
 
   preview :class => DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
-    	 .match_attribute(:access, 'preview')
+         .match_attribute(:access, 'preview')
   end
 
   originalRecord :class => DPLA::MAP::WebResource do
@@ -26,31 +26,35 @@ Krikri::Mapper.define(:ncdhc, :parser => Krikri::ModsParser) do
   sourceResource :class => DPLA::MAP::SourceResource do
     
     collection :class => DPLA::MAP::Collection, 
-    	       :each => header.field('xmlns:set_spec'), 
-    	       :as => :coll do
+               :each => header.field('xmlns:set_spec'), 
+               :as => :coll do
       title coll
     end
 
     contributor :class => DPLA::MAP::Agent, 
-    		:each => record.field('mods:name')
-    		  	.select { |name| name['mods:role'].map(&:value).include?('contributor') }, 
-    		:as => :contrib do
+                :each => record.field('mods:name')
+                        .select { |name| name['mods:role']
+                                  .map { |v| v.value.downcase }
+                                  .include?('contributor') }, 
+                :as => :contrib do
       providedLabel contrib.field('mods:namePart')
     end
 
     creator :class => DPLA::MAP::Agent, 
-    	    :each => record.field('mods:name')
-    		    .select { |name| name['mods:role'].map(&:value).include?('creator') }, 
-    	    :as => :creator_role do
+            :each => record.field('mods:name')
+                    .select { |name| name['mods:role']
+                              .map { |v| v.value.downcase }
+                              .include?('creator') }, 
+            :as => :creator_role do
       providedLabel creator_role.field('mods:namePart')
     end
 
     date :class => DPLA::MAP::TimeSpan, 
-    	 :each => record.field('mods:originInfo'), 
-    	 :as => :created do
-      providedLabel created.field('mods:dateCreated').match_attribute(:keyDate, 'yes')
-      self.begin created.field('mods:dateCreated').match_attribute(:keyDate, 'yes').first_value
-      self.end created.field('mods:dateCreated').match_attribute(:keyDate, 'yes').last_value
+         :each => record.field('mods:originInfo', 'mods:dateCreated'), 
+         :as => :created do
+      providedLabel created.match_attribute(:keyDate, 'yes')
+      self.begin created.match_attribute(:keyDate, 'yes').first_value
+      self.end created.match_attribute(:keyDate, 'yes').last_value
     end
 
     description record.field('mods:note').match_attribute(:type, 'content')
@@ -62,31 +66,31 @@ Krikri::Mapper.define(:ncdhc, :parser => Krikri::ModsParser) do
     identifier record.field('mods:identifier')
 
     language :class => DPLA::MAP::Controlled::Language, 
-    	     :each => record.field('mods:language', 'mods:languageTerm'), 
-    	     :as => :lang do
+             :each => record.field('mods:language', 'mods:languageTerm'), 
+             :as => :lang do
       providedLabel lang
     end
 
     spatial :class => DPLA::MAP::Place, 
-    	    :each => record.field('mods:subject', 'mods:geographic'), 
-    	    :as => :place do
+            :each => record.field('mods:subject', 'mods:geographic'), 
+            :as => :place do
       providedLabel place
     end
 
     publisher :class => DPLA::MAP::Agent, 
-    	      :each => record.field('mods:originInfo'), 
-    	      :as => :publisher do
-      providedLabel publisher.field('mods:publisher')
+              :each => record.field('mods:originInfo', 'mods:publisher'),
+              :as => :publisher do
+      providedLabel publisher
     end
     
     relation record.field('mods:relatedItem')
-    	      .fields(['mods:location', 'mods:url'], ['mods:titleInfo', 'mods:title'])
-   
+              .fields(['mods:location', 'mods:url'], ['mods:titleInfo', 'mods:title'])
+    
     rights record.field('mods:accessCondition')
 
     subject :class => DPLA::MAP::Concept, 
-    	    :each => record.field('mods:subject', 'mods:topic'), 
-    	    :as => :subject do
+            :each => record.field('mods:subject', 'mods:topic'), 
+            :as => :subject do
       providedLabel subject
     end
 
