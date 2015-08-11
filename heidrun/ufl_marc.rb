@@ -3,6 +3,18 @@ def caribbean?(parser_value)
   parser_value.value.include?('Digital Library of the Caribbean')
 end
 
+def subfield_e(df)
+  df['marc:subfield'].match_attribute(:code, 'e')
+end
+
+contributor_select = lambda { |df|
+  (df.tag == '700' &&
+    !['joint author', 'jt author'].include?(subfield_e(df))) ||
+  (['710', '711', '720'].include?(df.tag) &&
+    !['aut', 'cre'].include?(subfield_e(df)))
+}
+
+
 Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
   provider :class => DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/ufl'
@@ -53,8 +65,15 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
       title coll.field('marc:subfield').match_attribute(:code, 'a')
     end
 
-    #don't know how to do these but am keeping placeholder
-    #contributor 
+    # contributor:
+    #   700 when the subfield e is not 'joint author' or 'jt author';
+    #   710; 711; 720 when the relator term (subfield e) is not 'aut' or 'cre'
+    contributor :class => DPLA::MAP::Agent,
+                :each => record.field('marc:datafield')
+                               .select(&contributor_select),
+                :as => :contrib do
+      providedLabel contrib.field('marc:subfield')
+    end
 
     #creator 
 
