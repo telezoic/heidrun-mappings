@@ -14,6 +14,11 @@ contributor_select = lambda { |df|
     !['aut', 'cre'].include?(subfield_e(df)))
 }
 
+creator_select = lambda { |df|
+  ['100', '110', '111', '700'].include?(df.tag) &&
+    ['joint author.', 'jt author'].include?(subfield_e(df))
+}
+
 
 Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
   provider :class => DPLA::MAP::Agent do
@@ -75,7 +80,15 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
       providedLabel contrib.field('marc:subfield')
     end
 
-    #creator 
+    # creator:
+    #   100, 110, 111, 700 when the relator term (subfield e) is
+    #   'joint author.' or 'jt author'
+    creator :class => DPLA::MAP::Agent,
+            :each => record.field('marc:datafield')
+                           .select(&creator_select),
+            :as => :cre do
+      providedLabel cre.field('marc:subfield')
+    end
 
     date :class => DPLA::MAP::TimeSpan,
          :each => record.field('marc:datafield')
