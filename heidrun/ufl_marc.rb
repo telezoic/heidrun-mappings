@@ -54,6 +54,8 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
           :each => record.field('marc:datafield')
                          .match_attribute(:tag, '992'),
           :as => :thumb do
+    # FIXME:  ensure properly urlencoded.  There are URIs with space
+    # characters that produce errors.
     uri thumb.field('marc:subfield').match_attribute(:code, 'a')
   end
 
@@ -111,8 +113,48 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
                       (df.tag == '340' && 
                        !df['marc:subfield'].match_attribute(:code, 'b').empty?) }
             .field('marc:subfield')
-    
-    #genre 
+
+    # genre
+    #   See chart here [minus step two]:
+    #   https://docs.google.com/spreadsheet/ccc?key=0ApDps8nOS9g5dHBOS0ZLRVJyZ1ZsR3RNZDhXTGV4SVE#gid=0
+
+    # Returns an array, but does not work. Error:
+    #   value must be an RDF URI, Node, Literal, or a valid datatype.
+    #       You provided ["Newspapers"]
+    genre record.map { |r|
+      leader = r.node.children.select { |c| c.name == 'leader' }[0]
+                              .children.first.to_s
+      cf_007 = r.node.children.select { |c| c.name == 'controlfield' &&
+                                            c[:tag] == '007' }
+                              .first.children.to_s
+      cf_008 = r.node.children.select { |c| c.name == 'controlfield' &&
+                                            c[:tag] == '008' }
+                              .first.children.to_s
+      MappingTools::MARC.genre leader: leader, cf_007: cf_007, cf_008: cf_008
+    }
+
+    # But this works:
+    # genre ['A', 'B']
+
+    # This does not work, because nothing is output for hasType by dump(:ttl),
+    # but at least it does not fail.  The :class property is necessary.
+    #
+    # genre  :class => DPLA::MAP::Concept,
+    #        :each => record.map { |r|
+    #                  leader = r.node.children.select { |c| c.name == 'leader' }[0]
+    #                            .children.first.to_s
+    #                  cf_007 = r.node.children.select { |c| c.name == 'controlfield' &&
+    #                                                        c[:tag] == '007' }
+    #                            .first.children.to_s
+    #                  cf_008 = r.node.children.select { |c| c.name == 'controlfield' &&
+    #                                                        c[:tag] == '008' }
+    #                            .first.children.to_s
+    #                  MappingTools::MARC.genre leader: leader, cf_007: cf_007, cf_008: cf_008
+    #                },
+    #       :as => :g do
+    #   g
+    # end
+
 
     #identifier 
 
