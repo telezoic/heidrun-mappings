@@ -46,7 +46,7 @@ module MappingTools
 
     def assign_manuscript(genres, opts)
       if manu_lang_material?(opts[:leader])
-        genres << 'manuscript'
+        genres << 'Manuscript'
         true
       else
         false
@@ -68,7 +68,7 @@ module MappingTools
         if slide?(opts[:cf_007]) || transparency?(opts[:cf_007])
           genres << 'Photograph / Pictorial Works'
           true
-        elsif film_video? opts[:cf_007]
+        elsif film_video?(opts[:cf_007])
           genres << 'Film / Video'
           true
         else
