@@ -19,6 +19,16 @@ creator_select = lambda { |df|
     ['joint author.', 'jt author'].include?(subfield_e(df))
 }
 
+# See genre below.  Lambdas for `.select`s that determine the nature of a node
+# in `record`.
+is_leader_node = lambda { |node| node.name == 'leader' }
+is_cf7_node = lambda { |node|
+  node.name == 'controlfield' && node[:tag] == '007'
+}
+is_cf8_node = lambda { |node|
+  node.name == 'controlfield' && node[:tag] == '008'
+}
+
 
 Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
   provider :class => DPLA::MAP::Agent do
@@ -117,44 +127,23 @@ Krikri::Mapper.define(:ufl_marc, :parser => Krikri::MARCXMLParser) do
     # genre
     #   See chart here [minus step two]:
     #   https://docs.google.com/spreadsheet/ccc?key=0ApDps8nOS9g5dHBOS0ZLRVJyZ1ZsR3RNZDhXTGV4SVE#gid=0
-
-    # Returns an array, but does not work. Error:
-    #   value must be an RDF URI, Node, Literal, or a valid datatype.
-    #       You provided ["Newspapers"]
-    genre record.map { |r|
-      leader = r.node.children.select { |c| c.name == 'leader' }[0]
-                              .children.first.to_s
-      cf_007 = r.node.children.select { |c| c.name == 'controlfield' &&
-                                            c[:tag] == '007' }
-                              .first.children.to_s
-      cf_008 = r.node.children.select { |c| c.name == 'controlfield' &&
-                                            c[:tag] == '008' }
-                              .first.children.to_s
-      MappingTools::MARC.genre leader: leader, cf_007: cf_007, cf_008: cf_008
-    }
-
-    # But this works:
-    # genre ['A', 'B']
-
-    # This does not work, because nothing is output for hasType by dump(:ttl),
-    # but at least it does not fail.  The :class property is necessary.
-    #
-    # genre  :class => DPLA::MAP::Concept,
-    #        :each => record.map { |r|
-    #                  leader = r.node.children.select { |c| c.name == 'leader' }[0]
-    #                            .children.first.to_s
-    #                  cf_007 = r.node.children.select { |c| c.name == 'controlfield' &&
-    #                                                        c[:tag] == '007' }
-    #                            .first.children.to_s
-    #                  cf_008 = r.node.children.select { |c| c.name == 'controlfield' &&
-    #                                                        c[:tag] == '008' }
-    #                            .first.children.to_s
-    #                  MappingTools::MARC.genre leader: leader, cf_007: cf_007, cf_008: cf_008
-    #                },
-    #       :as => :g do
-    #   g
-    # end
-
+    genre  :class => DPLA::MAP::Concept,
+           :each => record.map { |r|
+                      # The disparity between ".children.first" and
+                      # ".first.children" is not accidental:
+                      leader = r.node.children.select(&is_leader_node)[0]
+                                .children.first.to_s
+                      cf_007 = r.node.children.select(&is_cf7_node)
+                                .first.children.to_s
+                      cf_008 = r.node.children.select(&is_cf8_node)
+                                .first.children.to_s
+                     MappingTools::MARC.genre leader: leader,
+                                              cf_007: cf_007,
+                                              cf_008: cf_008
+                   }.flatten,
+          :as => :g do
+      prefLabel g
+    end
 
     #identifier 
 
