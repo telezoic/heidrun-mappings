@@ -10,7 +10,7 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
 
   isShownAt :class => DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
-        .match_attribute(:usage, 'primary')
+        .match_attribute(:usage) { |attr| attr.downcase.starts_with? 'primary' }
         .match_attribute(:access, 'object in context')
     dcformat record.field('mods:physicalDescription', 
                           'mods:internetMediaType')
