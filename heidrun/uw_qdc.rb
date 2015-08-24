@@ -14,6 +14,7 @@ Krikri::Mapper.define(:uw_qdc,
 
   dataProvider :class => DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/washington'
+    label 'University of Washington'
   end
 
   isShownAt :class => DPLA::MAP::WebResource do
