@@ -31,7 +31,7 @@ Krikri::Mapper.define(:dlg_dc, :parser => Krikri::OaiDcParser) do
     # TODO: Crosswalk says to take collection from OAI set name/description,
     # but we need to be able harvest set titles and populate them somewhere.
     # This will just pull back the setSpec code for now.
-    collection :class => DPLA::MAP::Collection, :each => record.field('xmlns:header', 'xmlns:setSpec'), :as => :coll do
+    collection :class => DPLA::MAP::Collection, :each => header.field('xmlns:setSpec'), :as => :coll do
       title coll
     end
 
