@@ -26,7 +26,7 @@ Krikri::Mapper.define(:ncdhc, :parser => Krikri::ModsParser) do
   sourceResource :class => DPLA::MAP::SourceResource do
     
     collection :class => DPLA::MAP::Collection, 
-               :each => header.field('xmlns:setSpec'),
+               :each => header.field('xmlns:set_spec'), 
                :as => :coll do
       title coll
     end
