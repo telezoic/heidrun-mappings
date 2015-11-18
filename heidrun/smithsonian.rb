@@ -13,7 +13,7 @@ Krikri::Mapper.define(:smithsonian,
   # TODO check this one
   preview :class => DPLA::MAP::WebResource,
           :each => record.field('online_media', 'media')
-                         .match_attribute('thumbnail'),
+                         .match_attribute(:thumbnail),
           :as => :thumbnail do
      uri thumbnail.attribute('thumbnail')
   end
@@ -41,7 +41,7 @@ Krikri::Mapper.define(:smithsonian,
     # dcterms:contributor
     #  <name label="associated person">
     contributor :class => DPLA::MAP::Agent,
-                :each => record.field('freetext', 'name').match_attribute('label', 'associated person'),
+                :each => record.field('freetext', 'name').match_attribute(:label, 'associated person'),
                 :as => :contributor do
       providedLabel contributor
     end
@@ -49,7 +49,7 @@ Krikri::Mapper.define(:smithsonian,
     # dcterms:creator
     #   <freetext category=”name” label=“[value]”>
     creator :class => DPLA::MAP::Agent,
-            :each => record.field('freetext', 'name').match_attribute('label') { |label| isCreator?(label) },
+            :each => record.field('freetext', 'name').match_attribute(:label) { |label| isCreator?(label) },
             :as => :creator do
       providedLabel creator
     end
@@ -57,11 +57,9 @@ Krikri::Mapper.define(:smithsonian,
     # dc:date
     #   <freetext category=”date” label=“[value]”>
     #   *Take earliest date
-    # TODO only take earliest
-    date :class => DPLA::MAP::TimeSpan,
-         :each => record.field('freetext', 'date'),
-         :as => :date do
-      providedLabel date
+    # TODO only take earliest in a better way?
+    date :class => DPLA::MAP::TimeSpan do
+      providedLabel record.field('freetext', 'date').map(&:value).sort.first_value
     end
 
     # dcterms:description
@@ -71,14 +69,14 @@ Krikri::Mapper.define(:smithsonian,
 
     # dcterms:extent
     #   <freetext category=”physicalDescription” label=“Dimensions”>
-    extent record.field('freetext', 'physicalDescription').match_attribute('label','Dimensions')
+    extent record.field('freetext', 'physicalDescription').match_attribute(:label,'Dimensions')
 
     # dc:format
     #   <freetext category=”physicalDescription” label=“Physical description”>
     #   <freetext category=”physicalDescription” label=“Medium”>;
     #   <object_type>
     dcformat record.field('freetext', 'physicalDescription')
-                   .match_attribute('label') { |label| ['Physical description', 'Medium'].include?(label) }
+                   .match_attribute(:label) { |label| ['Physical description', 'Medium'].include?(label) }
     # TODO concat dcformat with: record.field('freetext', 'object_type')
 
     # dcterms:identifier
@@ -86,7 +84,9 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”identifier” label=“Catalog #”>
     #   <record_ID>
     identifier record.field('freetext', 'identifier')
-                     .match_attribute('label') { |label| ['Accession #', 'Catalog #'].include?(label) }
+                     .match_attribute(:label) { |label| ['Accession #', 'Catalog #'].include?(label) }
+                     .map(&:values)
+                     .concat(record.field('record_ID').map(&:values))
     # TODO concat identifer with record_ID fields
 
     # dcterms:language
@@ -105,7 +105,7 @@ Krikri::Mapper.define(:smithsonian,
     # TODO check for all geoLocation fields and revert to place if there aren't any
     spatial :class => DPLA::MAP::Place,
             :each => record.field('geoLocation', 'L5')
-                           .match_attribute('type') {|type| ['City', 'Town'].include?(type)},
+                           .match_attribute(:type) {|type| ['City', 'Town'].include?(type)},
             :as => :place do
       providedLabel place
     end
@@ -114,7 +114,7 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”publisher” label=“publisher”>
     publisher :class => DPLA::MAP::Agent,
               :each => record.field('freetext', 'publisher')
-                             .match_attribute('label', 'publisher'),
+                             .match_attribute(:label, 'publisher'),
               :as => :publisher do
       providedLabel publisher
     end
@@ -122,14 +122,18 @@ Krikri::Mapper.define(:smithsonian,
     # dc:rights
     #   <media ... rights="[value]"> OTHERWISE <freetext category=”creditLine” label=“Credit line”>;
     #   <freetext category=”objectRights” label=“Rights”>
+    # TODO
     #rights
 
     # dcterms:subject
     #   <freetext category=”topic” label=“Topic”>;
     #   <freetext category=”culture” label=“Nationality”>;
-    #   <topic>;<name>;<culture>;<tax_kingdom>; <tax_phylum>; <tax_division>; <tax_class>; <tax_order>; <tax_family>;  <tax_sub-family>; <scientific_name>; <common_name>;<strat_group>; <strat_formation>; <strat_member>
+    #   <topic>;<name>;<culture>;<tax_kingdom>; <tax_phylum>; <tax_division>; <tax_class>; <tax_order>;
+    #   <tax_family>;  <tax_sub-family>; <scientific_name>; <common_name>;<strat_group>; <strat_formation>;
+    #   <strat_member>
     #   n at least one record (http://content9.qa.dp.la/qa/compare?id=825ca339b107da76b17a1ba49f3e92fe ),
     #   there are @label values of "subject" and "event" which seem like they should also be mapped to Subject.
+    # TODO
     #subject :class => DPLA::MAP::Concept,
     #        :each => ?,
     #        :as => :subject do
@@ -138,6 +142,7 @@ Krikri::Mapper.define(:smithsonian,
 
     # dcterms:temporal
     #   <date>; <geo_age-era>; <geo_age-system>; <geo_age-series>; <geo_age-stage>
+    # TODO
     #temporal :class => DPLA::MAP::TimeSpan,
     #         :each => ?,
     #         :as => :time do
@@ -149,7 +154,7 @@ Krikri::Mapper.define(:smithsonian,
     #   <title label=”Object Name”>;
     #   <title label=”Title (Spanish)”>
     title record.field('title')
-                .match_attribute('label') { |label| ['Title', 'Object Name', 'Title (Spanish)'].include?(label) }
+                .match_attribute(:label) { |label| ['Title', 'Object Name', 'Title (Spanish)'].include?(label) }
 
     # dcterms:type
     #   <online media type>. If it does not match a DCMI type, map it to image
