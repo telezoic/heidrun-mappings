@@ -12,10 +12,12 @@ Krikri::Mapper.define(:smithsonian,
   #   <online_media><media @thumbnail>
   # TODO check this one
   preview :class => DPLA::MAP::WebResource,
-          :each => record.field('online_media', 'media')
-                         .match_attribute(:thumbnail),
-          :as => :thumbnail do
-     uri thumbnail.attribute('thumbnail')
+          :each => record.field('descriptiveNonRepeating',
+                                'online_media', 'media')
+                         .match_attribute(:thumbnail)
+                         .map {|f| f.node.attribute('thumbnail').value },
+          :as => :thumbnail_uri do
+     uri thumbnail_uri
   end
 
   # edm:isShownAt
@@ -41,7 +43,8 @@ Krikri::Mapper.define(:smithsonian,
     # dcterms:contributor
     #  <name label="associated person">
     contributor :class => DPLA::MAP::Agent,
-                :each => record.field('freetext', 'name').match_attribute(:label, 'associated person'),
+                :each => record.field('freetext', 'name')
+                               .match_attribute(:label, 'associated person'),
                 :as => :contributor do
       providedLabel contributor
     end
@@ -49,7 +52,8 @@ Krikri::Mapper.define(:smithsonian,
     # dcterms:creator
     #   <freetext category=”name” label=“[value]”>
     creator :class => DPLA::MAP::Agent,
-            :each => record.field('freetext', 'name').match_attribute(:label) { |label| isCreator?(label) },
+            :each => record.field('freetext', 'name')
+                           .match_attribute(:label) { |label| creator?(label) },
             :as => :creator do
       providedLabel creator
     end
@@ -59,7 +63,8 @@ Krikri::Mapper.define(:smithsonian,
     #   *Take earliest date
     # TODO only take earliest in a better way?
     date :class => DPLA::MAP::TimeSpan do
-      providedLabel record.field('freetext', 'date').map(&:value).sort.first_value
+      providedLabel record.field('freetext', 'date')
+                          .map(&:value).sort.first_value
     end
 
     # dcterms:description
@@ -69,14 +74,17 @@ Krikri::Mapper.define(:smithsonian,
 
     # dcterms:extent
     #   <freetext category=”physicalDescription” label=“Dimensions”>
-    extent record.field('freetext', 'physicalDescription').match_attribute(:label,'Dimensions')
+    extent record.field('freetext', 'physicalDescription')
+                 .match_attribute(:label,'Dimensions')
 
     # dc:format
     #   <freetext category=”physicalDescription” label=“Physical description”>
     #   <freetext category=”physicalDescription” label=“Medium”>;
     #   <object_type>
     dcformat record.field('freetext', 'physicalDescription')
-                   .match_attribute(:label) { |label| ['Physical description', 'Medium'].include?(label) }
+                   .match_attribute(:label) { |label|
+                     ['Physical description', 'Medium'].include?(label)
+                   }
     # TODO concat dcformat with: record.field('freetext', 'object_type')
 
     # dcterms:identifier
@@ -84,14 +92,17 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”identifier” label=“Catalog #”>
     #   <record_ID>
     identifier record.field('freetext', 'identifier')
-                     .match_attribute(:label) { |label| ['Accession #', 'Catalog #'].include?(label) }
-                     .map(&:values)
-                     .concat(record.field('record_ID').map(&:values))
+                     .match_attribute(:label) { |label|
+                       ['Accession #', 'Catalog #'].include?(label)
+                     }
+                     #.map(&:values)
+                     #.concat(record.field('descriptiveNonRepeating', 'record_ID')
+                     #.map(&:values))
     # TODO concat identifer with record_ID fields
 
     # dcterms:language
     #   <language> (not iso-6393 format)
-    language record.field('language')
+    language record.field('indexedStructured', 'language')
 
     # dcterms:spatial
     #   <geoLocation><L5 type=[City | Town]></geoLocation >;
@@ -104,8 +115,10 @@ Krikri::Mapper.define(:smithsonian,
     #   <place>[value]; <place label=""Origin"">[value] *Duplicate values should be ignored."
     # TODO check for all geoLocation fields and revert to place if there aren't any
     spatial :class => DPLA::MAP::Place,
-            :each => record.field('geoLocation', 'L5')
-                           .match_attribute(:type) {|type| ['City', 'Town'].include?(type)},
+            :each => record.field('indexedStructured', 'geoLocation', 'L5')
+                           .match_attribute(:type) { |type|
+                             ['City', 'Town'].include?(type)
+                           },
             :as => :place do
       providedLabel place
     end
@@ -120,7 +133,8 @@ Krikri::Mapper.define(:smithsonian,
     end
 
     # dc:rights
-    #   <media ... rights="[value]"> OTHERWISE <freetext category=”creditLine” label=“Credit line”>;
+    #   <media ... rights="[value]">
+    #     OTHERWISE <freetext category=”creditLine” label=“Credit line”>;
     #   <freetext category=”objectRights” label=“Rights”>
     # TODO
     #rights
@@ -128,11 +142,15 @@ Krikri::Mapper.define(:smithsonian,
     # dcterms:subject
     #   <freetext category=”topic” label=“Topic”>;
     #   <freetext category=”culture” label=“Nationality”>;
-    #   <topic>;<name>;<culture>;<tax_kingdom>; <tax_phylum>; <tax_division>; <tax_class>; <tax_order>;
-    #   <tax_family>;  <tax_sub-family>; <scientific_name>; <common_name>;<strat_group>; <strat_formation>;
+    #   <topic>;<name>;<culture>;<tax_kingdom>; <tax_phylum>; <tax_division>;
+    #   <tax_class>; <tax_order>; <tax_family>;  <tax_sub-family>;
+    #   <scientific_name>; <common_name>;<strat_group>; <strat_formation>;
     #   <strat_member>
-    #   n at least one record (http://content9.qa.dp.la/qa/compare?id=825ca339b107da76b17a1ba49f3e92fe ),
-    #   there are @label values of "subject" and "event" which seem like they should also be mapped to Subject.
+    #
+    #   n at least one record
+    #   (http://content9.qa.dp.la/qa/compare?id=825ca339b107da76b17a1ba49f3e92fe ),
+    #   there are @label values of "subject" and "event" which seem like they
+    #   should also be mapped to Subject.
     # TODO
     #subject :class => DPLA::MAP::Concept,
     #        :each => ?,
@@ -141,7 +159,8 @@ Krikri::Mapper.define(:smithsonian,
     #end
 
     # dcterms:temporal
-    #   <date>; <geo_age-era>; <geo_age-system>; <geo_age-series>; <geo_age-stage>
+    #   <date>; <geo_age-era>; <geo_age-system>; <geo_age-series>;
+    #   <geo_age-stage>
     # TODO
     #temporal :class => DPLA::MAP::TimeSpan,
     #         :each => ?,
@@ -153,8 +172,10 @@ Krikri::Mapper.define(:smithsonian,
     #   <title label=”Title”> ;
     #   <title label=”Object Name”>;
     #   <title label=”Title (Spanish)”>
-    title record.field('title')
-                .match_attribute(:label) { |label| ['Title', 'Object Name', 'Title (Spanish)'].include?(label) }
+    title record.field('descriptiveNonRepeating', 'title')
+                .match_attribute(:label) { |label|
+                  ['Title', 'Object Name', 'Title (Spanish)'].include?(label)
+                }
 
     # dcterms:type
     #   <online media type>. If it does not match a DCMI type, map it to image
@@ -299,6 +320,6 @@ CREATOR_LABEL_VALUES = [
     "weaver or owner",
 ]
 
-def isCreator?(value)
+def creator?(value)
   CREATOR_LABEL_VALUES.include?(value)
 end
