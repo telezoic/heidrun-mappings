@@ -1,3 +1,4 @@
+# coding: utf-8
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
 
@@ -62,9 +63,10 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”date” label=“[value]”>
     #   *Take earliest date
     # TODO only take earliest in a better way?
-    date :class => DPLA::MAP::TimeSpan do
-      providedLabel record.field('freetext', 'date')
-                          .map(&:value).sort.first_value
+    date :class => DPLA::MAP::TimeSpan,
+         :each => record.field('freetext', 'date').first_value,
+         :as => :date do
+      providedLabel date
     end
 
     # dcterms:description
