@@ -1,4 +1,9 @@
 # coding: utf-8
+clean_language = lambda do |i|
+  i.value.gsub(/ languages?/i, '')
+end
+
+
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
 
@@ -104,7 +109,8 @@ Krikri::Mapper.define(:smithsonian,
 
     # dcterms:language
     #   <language> (not iso-6393 format)
-    language record.field('indexedStructured', 'language')
+    # TODO: This will need an enrichment to convert to iso-6393
+    language record.field('indexedStructured', 'language').map(&clean_language)
 
     # dcterms:spatial
     #   <geoLocation><L5 type=[City | Town]></geoLocation >;
