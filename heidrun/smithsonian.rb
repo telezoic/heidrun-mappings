@@ -69,9 +69,19 @@ Krikri::Mapper.define(:smithsonian,
     #   *Take earliest date
     # TODO only take earliest in a better way?
     date :class => DPLA::MAP::TimeSpan,
-         :each => record.field('freetext', 'date').first_value,
+         :each => record.field('freetext', 'date'),
          :as => :date do
       providedLabel date
+    end
+
+    # Gretchen says:
+    #   So the mapping need to map all dates to both `sourceResource.date`
+    #   AND `sourceResource.temporal` and then we’ll run enrichment on date
+    #   in the next step.
+    temporal :class => DPLA::MAP::TimeSpan,
+         :each => record.field('freetext', 'date'),
+         :as => :temporal do
+      providedLabel temporal
     end
 
     # dcterms:description
