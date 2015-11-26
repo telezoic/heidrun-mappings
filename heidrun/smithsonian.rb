@@ -3,7 +3,6 @@ clean_language = lambda do |i|
   i.value.gsub(/ languages?/i, '')
 end
 
-
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
 
@@ -92,17 +91,21 @@ Krikri::Mapper.define(:smithsonian,
     # dcterms:extent
     #   <freetext category=”physicalDescription” label=“Dimensions”>
     extent record.field('freetext', 'physicalDescription')
-                 .match_attribute(:label,'Dimensions')
+                 .match_attribute(:label, 'Dimensions')
 
     # dc:format
     #   <freetext category=”physicalDescription” label=“Physical description”>
     #   <freetext category=”physicalDescription” label=“Medium”>;
     #   <object_type>
+    dcformat record.field('indexedStructured', 'object_type')
+    # ... AND ...
     dcformat record.field('freetext', 'physicalDescription')
                    .match_attribute(:label) { |label|
-                     ['Physical description', 'Medium'].include?(label)
-                   }
+                      ['Physical description', 'Medium'].include?(label)
+                    }
     # TODO concat dcformat with: record.field('freetext', 'object_type')
+    # JB - actually I'm seeing this in indexedStructured
+    # but the spec doesn't seem to care about the parent anyway
 
     # dcterms:identifier
     #   <freetext category=”identifier” label=“Accession #”>
@@ -132,11 +135,20 @@ Krikri::Mapper.define(:smithsonian,
     #   # IF NO GEOGRAPHIC HIERARCHY PROVIDED THEN: <freetext category=”place” label=“[n]”>[value];
     #   <place>[value]; <place label=""Origin"">[value] *Duplicate values should be ignored."
     # TODO check for all geoLocation fields and revert to place if there aren't any
+#    spatial :class => DPLA::MAP::Place,
+#            :each => record.field('indexedStructured', 'geoLocation', 'L5')
+#                           .match_attribute(:type) { |type|
+#                             ['City', 'Town'].include?(type)
+#                           },
+#            :as => :place do
+#      providedLabel place
+#    end
+
     spatial :class => DPLA::MAP::Place,
-            :each => record.field('indexedStructured', 'geoLocation', 'L5')
-                           .match_attribute(:type) { |type|
-                             ['City', 'Town'].include?(type)
-                           },
+            :each => record.if
+                           .field('indexedStructured', 'geoLocation')
+                           .fields('L2', 'L3', 'L4', 'L5', 'points', 'Other')
+                           .else { |r| r.field('freetext', 'place') },
             :as => :place do
       providedLabel place
     end
@@ -149,13 +161,21 @@ Krikri::Mapper.define(:smithsonian,
               :as => :publisher do
       providedLabel publisher
     end
+    # TODO ... not seeing any with label="publisher" - JB
 
     # dc:rights
     #   <media ... rights="[value]">
     #     OTHERWISE <freetext category=”creditLine” label=“Credit line”>;
     #   <freetext category=”objectRights” label=“Rights”>
     # TODO
-    #rights
+    rights record.if
+                 .field('descriptiveNonRepeating', 'online_media', 'media')
+                 .else { |r| r.field('freetext', 'creditLine')
+                              .match_attribute(:label, 'Credit line') }
+    #             .attribute('rights')
+    # TODO how to get the value of an attribute? - JB
+    # TODO how to match a field without specifying the whole path? - JB
+    # TODO how to concat? That old chestnut! - JB
 
     # dcterms:subject
     #   <freetext category=”topic” label=“Topic”>;
