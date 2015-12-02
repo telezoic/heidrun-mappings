@@ -38,7 +38,7 @@ Krikri::Mapper.define(:kdl_dc, parser: Krikri::OaiDcParser) do
 
   sourceResource class: DPLA::MAP::SourceResource do
     collection class: DPLA::MAP::Collection,
-               each: record.field('dc:creator'),
+               each: record.field('dc:source'),
                as: :coll do
       title coll
     end
@@ -59,8 +59,6 @@ Krikri::Mapper.define(:kdl_dc, parser: Krikri::OaiDcParser) do
 
     dcformat record.field('dc:format')
 
-    identifier record.field('dc:identifier')
-
     language class: DPLA::MAP::Controlled::Language,
              each: record.field('dc:language'),
              as: :lang do
@@ -72,8 +70,6 @@ Krikri::Mapper.define(:kdl_dc, parser: Krikri::OaiDcParser) do
             as: :place do
       providedLabel place
     end
-
-    relation record.fields('dc:source')
 
     rights record.field('dc:rights')
 
