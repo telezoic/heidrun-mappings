@@ -3,6 +3,10 @@ clean_language = lambda do |i|
   i.value.gsub(/ languages?/i, '')
 end
 
+is_shown_at_uri = lambda do |i|
+  "http://collections.si.edu/search/results.htm?q=record_ID%3A#{i.value}&repo=DPLA"
+end
+
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
 
@@ -11,6 +15,10 @@ Krikri::Mapper.define(:smithsonian,
   provider :class => DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/smithsonian'
     label 'Smithsonian Institution'
+  end
+
+  dataProvider :class => DPLA::MAP::Agent do
+    label record.field('descriptiveNonRepeating', 'data_source')
   end
 
   # edm:preview
@@ -25,12 +33,15 @@ Krikri::Mapper.define(:smithsonian,
      uri thumbnail_uri
   end
 
+  hasView :class => DPLA::MAP::WebResource do
+    rights record.field('indexedStructured', 'online_media_rights')
+  end
+
   # edm:isShownAt
   #   http://collections.si.edu/search/results.htm?q=record_ID%3A[<record_ID>[[value]]</record_ID>]&repo=DPLA
-  # TODO build uri string
-  #isShownAt :class => DPLA::MAP::WebResource do
-  #  uri
-  #end
+  isShownAt :class => DPLA::MAP::WebResource do
+    uri record.field('descriptiveNonRepeating', 'record_ID').map(&is_shown_at_uri)
+  end
 
   # dpla:originalRecord
   #   DPLA
@@ -43,7 +54,12 @@ Krikri::Mapper.define(:smithsonian,
 
     # dcterms:isPartOf
     #   <freetext category=”setName” label=“[n]”>
-    collection record.field('freetext', 'setName')
+    #collection record.field('freetext', 'setName')
+    collection :class => DPLA::MAP::Collection,
+               :each => record.field('freetext', 'setName'),
+               :as => :collection do
+      title collection
+    end
 
     # dcterms:contributor
     #  <name label="associated person">
@@ -66,17 +82,16 @@ Krikri::Mapper.define(:smithsonian,
     # dc:date
     #   <freetext category=”date” label=“[value]”>
     #   *Take earliest date
-    # TODO only take earliest in a better way?
+    # Gretchen says (re only the earliest date):
+    #   So the mapping need to map all dates to both `sourceResource.date`
+    #   AND `sourceResource.temporal` and then we’ll run enrichment on date
+    #   in the next step.
     date :class => DPLA::MAP::TimeSpan,
          :each => record.field('freetext', 'date'),
          :as => :date do
       providedLabel date
     end
 
-    # Gretchen says:
-    #   So the mapping need to map all dates to both `sourceResource.date`
-    #   AND `sourceResource.temporal` and then we’ll run enrichment on date
-    #   in the next step.
     temporal :class => DPLA::MAP::TimeSpan,
          :each => record.field('freetext', 'date'),
          :as => :temporal do
@@ -111,14 +126,13 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”identifier” label=“Accession #”>
     #   <freetext category=”identifier” label=“Catalog #”>
     #   <record_ID>
+    identifier record.field('descriptiveNonRepeating', 'record_ID')
+    # ... AND ...
     identifier record.field('freetext', 'identifier')
                      .match_attribute(:label) { |label|
                        ['Accession #', 'Catalog #'].include?(label)
                      }
-                     #.map(&:values)
-                     #.concat(record.field('descriptiveNonRepeating', 'record_ID')
-                     #.map(&:values))
-    # TODO concat identifer with record_ID fields
+    # TODO how to concat? - JB
 
     # dcterms:language
     #   <language> (not iso-6393 format)
@@ -143,7 +157,6 @@ Krikri::Mapper.define(:smithsonian,
 #            :as => :place do
 #      providedLabel place
 #    end
-
     spatial :class => DPLA::MAP::Place,
             :each => record.if
                            .field('indexedStructured', 'geoLocation')
@@ -151,17 +164,20 @@ Krikri::Mapper.define(:smithsonian,
                            .else { |r| r.field('freetext', 'place') },
             :as => :place do
       providedLabel place
+      lat place.field('point', 'latitude')
+      long place.field('point', 'longitude')
     end
 
     # dcterms:publisher
     #   <freetext category=”publisher” label=“publisher”>
     publisher :class => DPLA::MAP::Agent,
               :each => record.field('freetext', 'publisher')
-                             .match_attribute(:label, 'publisher'),
+                             .match_attribute(:label, 'Publisher'),
               :as => :publisher do
       providedLabel publisher
     end
-    # TODO ... not seeing any with label="publisher" - JB
+    # TODO not seeing any with label="publisher" - JB
+    #      ... ah label="Publisher"
 
     # dc:rights
     #   <media ... rights="[value]">
@@ -169,11 +185,10 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”objectRights” label=“Rights”>
     # TODO
     rights record.if
-                 .field('descriptiveNonRepeating', 'online_media', 'media')
+                 .field('descriptiveNonRepeating', 'online_media', 'media', '@rights')
                  .else { |r| r.field('freetext', 'creditLine')
                               .match_attribute(:label, 'Credit line') }
-    #             .attribute('rights')
-    # TODO how to get the value of an attribute? - JB
+    #             .map { |v| v.node.('rights') }
     # TODO how to match a field without specifying the whole path? - JB
     # TODO how to concat? That old chestnut! - JB
 
@@ -189,22 +204,23 @@ Krikri::Mapper.define(:smithsonian,
     #   (http://content9.qa.dp.la/qa/compare?id=825ca339b107da76b17a1ba49f3e92fe ),
     #   there are @label values of "subject" and "event" which seem like they
     #   should also be mapped to Subject.
-    # TODO
-    #subject :class => DPLA::MAP::Concept,
-    #        :each => ?,
-    #        :as => :subject do
-    #  providedLabel subject
-    #end
+    subject :class => DPLA::MAP::Concept,
+            :each => record.field('freetext', 'topic')
+                           .match_attribute(:label, 'Topic'),
+            :as => :subject do
+      providedLabel subject
+    end
+    # TODO how to concat? ... yet again - JB
 
     # dcterms:temporal
     #   <date>; <geo_age-era>; <geo_age-system>; <geo_age-series>;
     #   <geo_age-stage>
-    # TODO
-    #temporal :class => DPLA::MAP::TimeSpan,
-    #         :each => ?,
-    #         :as => :time do
-    #  providedLabel time
-    #end
+    temporal :class => DPLA::MAP::TimeSpan,
+             :each => record.field('date'),
+             :as => :time do
+      providedLabel time
+    end
+    # TODO you guessed it, how to do concat? - JB
 
     # dcterms:title
     #   <title label=”Title”> ;
@@ -217,14 +233,13 @@ Krikri::Mapper.define(:smithsonian,
 
     # dcterms:type
     #   <online media type>. If it does not match a DCMI type, map it to image
-    # TODO default to image if no online_media_type element
     dctype record.field('indexedStructured', 'online_media_type')
+    # TODO should defaulting to 'Image' be handled as an enrichment? - JB
+    # DCMI Types: Collection, Dataset, Event, Image, InteractiveResource,
+    #             MovingImage, PhysicalObject, Service, Software, Sound,
+    #             StillImage, Text
   end
 
-# TODO a few more mappings
-# dc:rights <online_media_rights>
-# edm:dataProvider  <data_source>
-# dcterms:title <freetext category=”setName” label=“[n]”> *Note not all sets have names as of 2013-11-22
 end
 
 
