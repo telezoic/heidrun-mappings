@@ -216,11 +216,12 @@ Krikri::Mapper.define(:smithsonian,
     #   <date>; <geo_age-era>; <geo_age-system>; <geo_age-series>;
     #   <geo_age-stage>
     temporal :class => DPLA::MAP::TimeSpan,
-             :each => record.field('date'),
+             :each => record.field('indexedStructured')
+                            .fields('date', 'geo_age-era', 'geo_age-system',
+                                    'geo_age-series', 'geo_age-stage'),
              :as => :time do
       providedLabel time
     end
-    # TODO you guessed it, how to do concat? - JB
 
     # dcterms:title
     #   <title label=”Title”> ;
