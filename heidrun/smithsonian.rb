@@ -16,6 +16,26 @@ extract_format = lambda do |record|
   physicalDescription.concat(record['indexedStructured'].field('object_type'))
 end
 
+# Number of records found ...
+# Accession #         633
+# Catalog #             0
+# Accession Number 490639
+# accession number  66758
+# Catalog Number        0
+# catalog number    67004
+identifier_map = lambda do |record|
+  identifier = record['freetext'].field('identifier')
+                                 .match_attribute(:label) { |label|
+                                    ['Accession #', 'Accession Number',
+                                     'accession number',
+                                     'Catalog #', 'Catalog Number',
+                                     'catalog number'].include?(label)
+                                  }
+
+  identifier.concat(record['descriptiveNonRepeating'].field('record_ID'))
+end
+
+
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
 
@@ -32,7 +52,6 @@ Krikri::Mapper.define(:smithsonian,
 
   # edm:preview
   #   <online_media><media @thumbnail>
-  # TODO check this one
   preview :class => DPLA::MAP::WebResource,
           :each => record.field('descriptiveNonRepeating',
                                 'online_media', 'media')
@@ -122,7 +141,6 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”physicalDescription” label=“Medium”>;
     #   <object_type>
     #
-    # TODO concat dcformat with: record.field('freetext', 'object_type')
     # JB - actually I'm seeing this in indexedStructured
     # but the spec doesn't seem to care about the parent anyway
     dcformat record.map(&extract_format).flatten
@@ -131,13 +149,7 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”identifier” label=“Accession #”>
     #   <freetext category=”identifier” label=“Catalog #”>
     #   <record_ID>
-    identifier record.field('descriptiveNonRepeating', 'record_ID')
-    # ... AND ...
-    identifier record.field('freetext', 'identifier')
-                     .match_attribute(:label) { |label|
-                       ['Accession #', 'Catalog #'].include?(label)
-                     }
-    # TODO how to concat? - JB
+    identifier record.map(&identifier_map).flatten
 
     # dcterms:language
     #   <language> (not iso-6393 format)
