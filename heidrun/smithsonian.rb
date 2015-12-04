@@ -7,6 +7,15 @@ is_shown_at_uri = lambda do |i|
   "http://collections.si.edu/search/results.htm?q=record_ID%3A#{i.value}&repo=DPLA"
 end
 
+extract_format = lambda do |record|
+  physicalDescription = record['freetext'].field('physicalDescription')
+                        .match_attribute(:label) { |label|
+    ['Physical description', 'Medium'].include?(label)
+  }
+
+  physicalDescription.concat(record['indexedStructured'].field('object_type'))
+end
+
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
 
@@ -112,15 +121,11 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category=”physicalDescription” label=“Physical description”>
     #   <freetext category=”physicalDescription” label=“Medium”>;
     #   <object_type>
-    dcformat record.field('indexedStructured', 'object_type')
-    # ... AND ...
-    dcformat record.field('freetext', 'physicalDescription')
-                   .match_attribute(:label) { |label|
-                      ['Physical description', 'Medium'].include?(label)
-                    }
+    #
     # TODO concat dcformat with: record.field('freetext', 'object_type')
     # JB - actually I'm seeing this in indexedStructured
     # but the spec doesn't seem to care about the parent anyway
+    dcformat record.map(&extract_format).flatten
 
     # dcterms:identifier
     #   <freetext category=”identifier” label=“Accession #”>
