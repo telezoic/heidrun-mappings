@@ -35,6 +35,76 @@ identifier_map = lambda do |record|
   identifier.concat(record['descriptiveNonRepeating'].field('record_ID'))
 end
 
+# "Credit line" should be "Credit Line"
+rights_map = lambda do | record|
+  rights = record['descriptiveNonRepeating']
+    .field('online_media', 'media', '@rights')
+
+  if rights.empty?
+    rights = record['freetext'].field('creditLine')
+      .match_attribute(:label, 'Credit Line')
+  end
+
+  rights.concat(record['freetext'].field('objectRights')
+                  .match_attribute(:label, 'Rights'))
+end
+
+# dcterms:subject
+#   <freetext category=”topic” label=“Topic”>;
+#   <freetext category=”culture” label=“Nationality”>;
+#   <topic>;<name>;<culture>;<tax_kingdom>; <tax_phylum>; <tax_division>;
+#   <tax_class>; <tax_order>; <tax_family>;  <tax_sub-family>;
+#   <scientific_name>; <common_name>;<strat_group>; <strat_formation>;
+#   <strat_member>
+#
+#   n at least one record
+#   (http://content9.qa.dp.la/qa/compare?id=825ca339b107da76b17a1ba49f3e92fe ),
+#   there are @label values of "subject" and "event" which seem like they
+#   should also be mapped to Subject.
+subject_map = lambda do |record|
+  subjects = record['freetext'].field('topic')
+    .match_attribute(:label, 'Topic')
+
+  subjects.concat(record['freetext'].field('culture')
+                    .match_attribute(:label, 'Nationality'))
+
+  # seems some of these can occur in freetext or indexedStructured
+  # so playing it safe by looking for all in both
+  subjects.concat(record['freetext']
+                    .fields('topic', 'name', 'culture',
+                            'tax_kingdom', 'tax_phylum',
+                            'tax_division', 'tax_class',
+                            'tax_order', 'tax_family',
+                            'scientific_name', 'common_name',
+                            'strat_group', 'strat_formation',
+                            'strat_member'))
+  subjects.concat(record['indexedStructured']
+                    .fields('topic', 'name', 'culture',
+                            'tax_kingdom', 'tax_phylum',
+                            'tax_division', 'tax_class',
+                            'tax_order', 'tax_family',
+                            'scientific_name', 'common_name',
+                            'strat_group', 'strat_formation',
+                            'strat_member'))
+
+  # only <freetext><name> has label="subject"
+  # sometimes it's label="Subject"
+  #
+  # I wonder if this is subject as in subject/object
+  # rather than subject/topic and so shouldn't be included?
+  #
+  # also, there are others that have label="subject"
+  # but they are <freetext><topic> so we're already
+  # getting them above
+  #
+  # also, all cases of label="event" are in <freetext><topic>s
+  subjects.concat(record['freetext']
+                    .field('name')
+                    .match_attribute(:label) { |label|
+                      ['subject', 'Subject'].include?(label)
+                    })
+end
+
 
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
@@ -200,12 +270,7 @@ Krikri::Mapper.define(:smithsonian,
     #   <media ... rights="[value]">
     #     OTHERWISE <freetext category=”creditLine” label=“Credit line”>;
     #   <freetext category=”objectRights” label=“Rights”>
-    # TODO
-    rights record.if
-                 .field('descriptiveNonRepeating', 'online_media', 'media', '@rights')
-                 .else { |r| r.field('freetext', 'creditLine')
-                              .match_attribute(:label, 'Credit line') }
-    #             .map { |v| v.node.('rights') }
+    rights record.map(&rights_map).flatten
     # TODO how to match a field without specifying the whole path? - JB
     # TODO how to concat? That old chestnut! - JB
 
@@ -222,12 +287,10 @@ Krikri::Mapper.define(:smithsonian,
     #   there are @label values of "subject" and "event" which seem like they
     #   should also be mapped to Subject.
     subject :class => DPLA::MAP::Concept,
-            :each => record.field('freetext', 'topic')
-                           .match_attribute(:label, 'Topic'),
+            :each => record.map(&subject_map).flatten,
             :as => :subject do
       providedLabel subject
     end
-    # TODO how to concat? ... yet again - JB
 
     # dcterms:temporal
     #   <date>; <geo_age-era>; <geo_age-system>; <geo_age-series>;
