@@ -1,8 +1,10 @@
 # coding: utf-8
 
-#   <accessCondition type="restrictionOnAccess" displayLabel="Access to the Collection"/>;
-#   <accessCondition type="useAndReproduction" displayLabel="Use of the Collection">
-rights_map = lambda do | record|
+#   <accessCondition type="restrictionOnAccess"
+#                    displayLabel="Access to the Collection"/>;
+#   <accessCondition type="useAndReproduction"
+#                    displayLabel="Use of the Collection">
+rights_map = lambda do |record|
   rights = record['accessCondition']
     .match_attribute(:type, 'restrictionOnAccess')
     .match_attribute(:displayLabel, 'Access to the Collection')
@@ -14,12 +16,11 @@ end
 
 # dcterms:subject
 #   <subject authority="lcsh"><topic>;
-#   <subject authority="lcsh"><name …><name Part>;
-#   <name type="personal" authority="lcnaf"><namePart …>...
+#   <subject authority="lcsh"><name ...><name Part>;
+#   <name type="personal" authority="lcnaf"><namePart ...>...
 subject_map = lambda do |record|
-  subjects = record['subject']
-    .match_attribute(:authority, 'lcsh')
-    .field('topic')
+  subjects = record['subject'].match_attribute(:authority, 'lcsh')
+                              .field('topic')
 
   subjects.concat(record['subject']
                     .match_attribute(:authority, 'lcsh')
@@ -30,7 +31,6 @@ subject_map = lambda do |record|
                     .match_attribute(:authority, 'lcnaf')
                     .field('name', 'namePart'))
 end
-
 
 Krikri::Mapper.define(:uva_mods,
                       :parser => Krikri::ModsParser) do
@@ -52,7 +52,7 @@ Krikri::Mapper.define(:uva_mods,
   #   <url access="preview">
   preview :class => DPLA::MAP::WebResource do
     uri record.field('location', 'url')
-              .match_attribute(:access, 'preview'),
+              .match_attribute(:access, 'preview')
   end
 
   # edm:provider
@@ -76,7 +76,6 @@ Krikri::Mapper.define(:uva_mods,
 
   # dpla:SourceResource
   sourceResource :class => DPLA::MAP::SourceResource do
-
     # dcterms:isPartOf
     #   <relatedItem type="series" ...><titleInfo><title>[IGNORE <nonSort>]
     collection :class => DPLA::MAP::Collection,
@@ -95,8 +94,8 @@ Krikri::Mapper.define(:uva_mods,
             :each => record.field('name')
                            .match_attribute(:authority, 'lcnaf')
                            .match_attribute(:type) { |type|
-                              ['personal', 'corporate'].include?(type)
-                            },
+                             ['personal', 'corporate'].include?(type)
+                           },
             :as => :creator do
       providedLabel creator
     end
@@ -109,22 +108,22 @@ Krikri::Mapper.define(:uva_mods,
          :as => :date do
       providedLabel date
     end
-    # TODO - this is in collection-description-mods.xml
-    #        not the item mods file. How to get it? -JB
-    #        <mods:originInfo><mods:dateIssued>
-    #        not seeing keyDate there either
-    #        there is <originInfo><dateCreated> in the item
-    #        which has keyDate
+    # TODO: this is in collection-description-mods.xml
+    #       not the item mods file. How to get it? -JB
+    #       <mods:originInfo><mods:dateIssued>
+    #       not seeing keyDate there either
+    #       there is <originInfo><dateCreated> in the item
+    #       which has keyDate
 
     # dcterms:description
     #   <physicalDescription><note displayLabel="condition">
     description record.field('physicalDescription', 'note')
-                      .match_attribute(:displayLabel, 'condition')
+      .match_attribute(:displayLabel, 'condition')
 
     # dcterms:extent
     #   <physicalDescription><note displayLabel="size inches">
     extent record.field('physicalDescription', 'note')
-                 .match_attribute(:displayLabel, 'size inches')
+      .match_attribute(:displayLabel, 'size inches')
 
     # dc:format
     #   <physicalDescription>
@@ -133,12 +132,12 @@ Krikri::Mapper.define(:uva_mods,
     # dcterms:identifier
     #   <identifier type="uri" ...>
     identifier record.field('identifier')
-                     .match_attribute(:type, 'uri')
+      .match_attribute(:type, 'uri')
 
     # dcterms:spatial
-    #   <originInfo><place><placeTerm …>
+    #   <originInfo><place><placeTerm ...>
     spatial :class => DPLA::MAP::Place,
-            :each => record.field('originInfo', 'place', 'placeTerm')
+            :each => record.field('originInfo', 'place', 'placeTerm'),
             :as => :place do
       providedLabel place
     end
@@ -146,20 +145,22 @@ Krikri::Mapper.define(:uva_mods,
     # dcterms:publisher
     #   <originInfo><publisher>
     publisher :class => DPLA::MAP::Agent,
-              :each => record.field('originInfo', 'publisher')
+              :each => record.field('originInfo', 'publisher'),
               :as => :publisher do
       providedLabel publisher
     end
 
     # dc:rights
-    #   <accessCondition type="restrictionOnAccess" displayLabel="Access to the Collection"/>;
-    #   <accessCondition type="useAndReproduction" displayLabel="Use of the Collection">
+    #   <accessCondition type="restrictionOnAccess"
+    #                    displayLabel="Access to the Collection"/>;
+    #   <accessCondition type="useAndReproduction"
+    #                    displayLabel="Use of the Collection">
     rights record.map(&rights_map).flatten
 
     # dcterms:subject
     #   <subject authority="lcsh"><topic>;
-    #   <subject authority="lcsh"><name …><name Part>;
-    #   <name type="personal" authority="lcnaf"><namePart …>...
+    #   <subject authority="lcsh"><name ...><name Part>;
+    #   <name type="personal" authority="lcnaf"><namePart ...>...
     subject :class => DPLA::MAP::Concept,
             :each => record.map(&subject_map).flatten,
             :as => :subject do
@@ -176,5 +177,4 @@ Krikri::Mapper.define(:uva_mods,
     #   <typeOfResource...> DCMItype enrichment
     dctype record.field('typeOfResource')
   end
-
 end
