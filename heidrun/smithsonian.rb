@@ -8,12 +8,12 @@ is_shown_at_uri = lambda do |i|
 end
 
 extract_format = lambda do |record|
-  physicalDescription = record['freetext'].field('physicalDescription')
-                        .match_attribute(:label) { |label|
+  format = record['freetext'].field('physicalDescription')
+                             .match_attribute(:label) { |label|
     ['Physical description', 'Medium'].include?(label)
   }
 
-  physicalDescription.concat(record['indexedStructured'].field('object_type'))
+  format.concat(record['indexedStructured'].field('object_type'))
 end
 
 # Number of records found ...
@@ -26,17 +26,17 @@ end
 identifier_map = lambda do |record|
   identifier = record['freetext'].field('identifier')
                                  .match_attribute(:label) { |label|
-                                    ['Accession #', 'Accession Number',
-                                     'accession number',
-                                     'Catalog #', 'Catalog Number',
-                                     'catalog number'].include?(label)
-                                  }
+                                   ['Accession #', 'Accession Number',
+                                    'accession number',
+                                    'Catalog #', 'Catalog Number',
+                                    'catalog number'].include?(label)
+                                 }
 
   identifier.concat(record['descriptiveNonRepeating'].field('record_ID'))
 end
 
 # "Credit line" should be "Credit Line"
-rights_map = lambda do | record|
+rights_map = lambda do |record|
   rights = record['descriptiveNonRepeating']
     .field('online_media', 'media', '@rights')
 
@@ -50,8 +50,8 @@ rights_map = lambda do | record|
 end
 
 # dcterms:subject
-#   <freetext category=”topic” label=“Topic”>;
-#   <freetext category=”culture” label=“Nationality”>;
+#   <freetext category="topic" label="Topic">;
+#   <freetext category="culture" label="Nationality">;
 #   <topic>;<name>;<culture>;<tax_kingdom>; <tax_phylum>; <tax_division>;
 #   <tax_class>; <tax_order>; <tax_family>;  <tax_sub-family>;
 #   <scientific_name>; <common_name>;<strat_group>; <strat_formation>;
@@ -105,10 +105,8 @@ subject_map = lambda do |record|
                     })
 end
 
-
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
-
   # edm:provider
   #   Smithsonian Institution
   provider :class => DPLA::MAP::Agent do
@@ -126,9 +124,9 @@ Krikri::Mapper.define(:smithsonian,
           :each => record.field('descriptiveNonRepeating',
                                 'online_media', 'media')
                          .match_attribute(:thumbnail)
-                         .map {|f| f.node.attribute('thumbnail').value },
+                         .map { |f| f.node.attribute('thumbnail').value },
           :as => :thumbnail_uri do
-     uri thumbnail_uri
+    uri thumbnail_uri
   end
 
   hasView :class => DPLA::MAP::WebResource do
@@ -136,9 +134,11 @@ Krikri::Mapper.define(:smithsonian,
   end
 
   # edm:isShownAt
-  #   http://collections.si.edu/search/results.htm?q=record_ID%3A[<record_ID>[[value]]</record_ID>]&repo=DPLA
+  #   http://collections.si.edu/search/results.htm? \
+  #     q=record_ID%3A[<record_ID>[[value]]</record_ID>]&repo=DPLA
   isShownAt :class => DPLA::MAP::WebResource do
-    uri record.field('descriptiveNonRepeating', 'record_ID').map(&is_shown_at_uri)
+    uri record.field('descriptiveNonRepeating', 'record_ID')
+              .map(&is_shown_at_uri)
   end
 
   # dpla:originalRecord
@@ -149,10 +149,8 @@ Krikri::Mapper.define(:smithsonian,
 
   # dpla:SourceResource
   sourceResource :class => DPLA::MAP::SourceResource do
-
     # dcterms:isPartOf
-    #   <freetext category=”setName” label=“[n]”>
-    #collection record.field('freetext', 'setName')
+    #   <freetext category="setName" label="[n]">
     collection :class => DPLA::MAP::Collection,
                :each => record.field('freetext', 'setName'),
                :as => :collection do
@@ -169,7 +167,7 @@ Krikri::Mapper.define(:smithsonian,
     end
 
     # dcterms:creator
-    #   <freetext category=”name” label=“[value]”>
+    #   <freetext category="name" label="[value]">
     creator :class => DPLA::MAP::Agent,
             :each => record.field('freetext', 'name')
                            .match_attribute(:label) { |label| creator?(label) },
@@ -178,11 +176,11 @@ Krikri::Mapper.define(:smithsonian,
     end
 
     # dc:date
-    #   <freetext category=”date” label=“[value]”>
+    #   <freetext category="date" label="[value]">
     #   *Take earliest date
     # Gretchen says (re only the earliest date):
     #   So the mapping need to map all dates to both `sourceResource.date`
-    #   AND `sourceResource.temporal` and then we’ll run enrichment on date
+    #   AND `sourceResource.temporal` and then we'll run enrichment on date
     #   in the next step.
     date :class => DPLA::MAP::TimeSpan,
          :each => record.field('freetext', 'date'),
@@ -197,18 +195,18 @@ Krikri::Mapper.define(:smithsonian,
     end
 
     # dcterms:description
-    #   <freetext category="notes" label=“[n]”>[value]
+    #   <freetext category="notes" label="[n]">[value]
     #   *Each instance of "notes" should be a separate value.
     description record.field('freetext', 'notes')
 
     # dcterms:extent
-    #   <freetext category=”physicalDescription” label=“Dimensions”>
+    #   <freetext category="physicalDescription" label="Dimensions">
     extent record.field('freetext', 'physicalDescription')
                  .match_attribute(:label, 'Dimensions')
 
     # dc:format
-    #   <freetext category=”physicalDescription” label=“Physical description”>
-    #   <freetext category=”physicalDescription” label=“Medium”>;
+    #   <freetext category="physicalDescription" label="Physical description">
+    #   <freetext category="physicalDescription" label="Medium">;
     #   <object_type>
     #
     # JB - actually I'm seeing this in indexedStructured
@@ -216,8 +214,8 @@ Krikri::Mapper.define(:smithsonian,
     dcformat record.map(&extract_format).flatten
 
     # dcterms:identifier
-    #   <freetext category=”identifier” label=“Accession #”>
-    #   <freetext category=”identifier” label=“Catalog #”>
+    #   <freetext category="identifier" label="Accession #">
+    #   <freetext category="identifier" label="Catalog #">
     #   <record_ID>
     identifier record.map(&identifier_map).flatten
 
@@ -230,20 +228,17 @@ Krikri::Mapper.define(:smithsonian,
     #   <geoLocation><L5 type=[City | Town]></geoLocation >;
     #   <geoLocation><L3 type=[State | Province]></geoLocation>;
     #   <geoLocation><L4 type=[County | Island]></geoLocation >;
-    #   <geoLocation><Other type = [anything: examples = Neighborhood, Street, Desert, Park, etc.]></geoLocation>;
+    #   <geoLocation>
+    #     <Other type =[eg: Neighborhood, Street, Desert, Park, etc.]>
+    #   </geoLocation>;
     #   <geoLocation><L2 type=[Country | Nation]></geoLocation>;
-    #   <geoLocation><points label=[text] dates=”yyyy-yyyy”><point><latitude type=[decimal | degrees]><longitude type=[decimal | degrees]></point></geoLocation>;
-    #   # IF NO GEOGRAPHIC HIERARCHY PROVIDED THEN: <freetext category=”place” label=“[n]”>[value];
-    #   <place>[value]; <place label=""Origin"">[value] *Duplicate values should be ignored."
-    # TODO check for all geoLocation fields and revert to place if there aren't any
-#    spatial :class => DPLA::MAP::Place,
-#            :each => record.field('indexedStructured', 'geoLocation', 'L5')
-#                           .match_attribute(:type) { |type|
-#                             ['City', 'Town'].include?(type)
-#                           },
-#            :as => :place do
-#      providedLabel place
-#    end
+    #   <geoLocation><points label=[text] dates="yyyy-yyyy"><point>
+    #     <latitude type=[decimal | degrees]>
+    #     <longitude type=[decimal | degrees]></point></geoLocation>;
+    #   # IF NO GEOGRAPHIC HIERARCHY PROVIDED THEN:
+    #      <freetext category="place" label="[n]">[value];
+    #   <place>[value];
+    #   <place label=""Origin"">[value] *Duplicate values should be ignored."
     spatial :class => DPLA::MAP::Place,
             :each => record.if
                            .field('indexedStructured', 'geoLocation')
@@ -256,34 +251,33 @@ Krikri::Mapper.define(:smithsonian,
     end
 
     # dcterms:publisher
-    #   <freetext category=”publisher” label=“publisher”>
+    #   <freetext category="publisher" label="publisher">
     publisher :class => DPLA::MAP::Agent,
               :each => record.field('freetext', 'publisher')
                              .match_attribute(:label, 'Publisher'),
               :as => :publisher do
       providedLabel publisher
     end
-    # TODO not seeing any with label="publisher" - JB
-    #      ... ah label="Publisher"
+    # TODO: not seeing any with label="publisher" - JB
+    #       ... ah label="Publisher"
 
     # dc:rights
     #   <media ... rights="[value]">
-    #     OTHERWISE <freetext category=”creditLine” label=“Credit line”>;
-    #   <freetext category=”objectRights” label=“Rights”>
+    #     OTHERWISE <freetext category="creditLine" label="Credit line">;
+    #   <freetext category="objectRights" label="Rights">
     rights record.map(&rights_map).flatten
-    # TODO how to match a field without specifying the whole path? - JB
-    # TODO how to concat? That old chestnut! - JB
+    # TODO: how to match a field without specifying the whole path? - JB
 
     # dcterms:subject
-    #   <freetext category=”topic” label=“Topic”>;
-    #   <freetext category=”culture” label=“Nationality”>;
+    #   <freetext category="topic" label="Topic">;
+    #   <freetext category="culture" label="Nationality">;
     #   <topic>;<name>;<culture>;<tax_kingdom>; <tax_phylum>; <tax_division>;
     #   <tax_class>; <tax_order>; <tax_family>;  <tax_sub-family>;
     #   <scientific_name>; <common_name>;<strat_group>; <strat_formation>;
     #   <strat_member>
     #
     #   n at least one record
-    #   (http://content9.qa.dp.la/qa/compare?id=825ca339b107da76b17a1ba49f3e92fe ),
+    #   http://content9.qa.dp.la/qa/compare?id=825ca339b107da76b17a1ba49f3e92fe
     #   there are @label values of "subject" and "event" which seem like they
     #   should also be mapped to Subject.
     subject :class => DPLA::MAP::Concept,
@@ -304,9 +298,9 @@ Krikri::Mapper.define(:smithsonian,
     end
 
     # dcterms:title
-    #   <title label=”Title”> ;
-    #   <title label=”Object Name”>;
-    #   <title label=”Title (Spanish)”>
+    #   <title label="Title"> ;
+    #   <title label="Object Name">;
+    #   <title label="Title (Spanish)">
     title record.field('descriptiveNonRepeating', 'title')
                 .match_attribute(:label) { |label|
                   ['Title', 'Object Name', 'Title (Spanish)'].include?(label)
@@ -315,143 +309,141 @@ Krikri::Mapper.define(:smithsonian,
     # dcterms:type
     #   <online media type>. If it does not match a DCMI type, map it to image
     dctype record.field('indexedStructured', 'online_media_type')
-    # TODO should defaulting to 'Image' be handled as an enrichment? - JB
+    # TODO: should defaulting to 'Image' be handled as an enrichment? - JB
     # DCMI Types: Collection, Dataset, Event, Image, InteractiveResource,
     #             MovingImage, PhysicalObject, Service, Software, Sound,
     #             StillImage, Text
   end
-
 end
 
-
 CREATOR_LABEL_VALUES = [
-    "Architect",
-    "Artist",
-    "Artists/Makers",
-    "Attributed to",
-    "Author",
-    "Cabinet Maker",
-    "Ceramist",
-    "Circle of",
-    "Co-Designer",
-    "Creator",
-    "Decorator",
-    "Designer",
-    "Draftsman",
-    "Editor",
-    "Embroiderer",
-    "Engraver",
-    "Etcher",
-    "Executor",
-    "Follower of",
-    "Graphic Designer",
-    "Instrumentiste",
-    "Inventor",
-    "Landscape Architect",
-    "Landscape Designer",
-    "Maker",
-    "Model Maker/maker",
-    "Modeler",
-    "Painter",
-    "Photographer",
-    "Possible attribution",
-    "Possibly",
-    "Possibly by",
-    "Print Maker",
-    "Printmaker",
-    "Probably",
-    "School of",
-    "Sculptor",
-    "Studio of",
-    "Workshop of",
-    "Weaver",
-    "Writer",
-    "animator",
-    "architect",
-    "artist",
-    "artist.",
-    "artist?",
-    "artist attribution",
-    "author",
-    "author.",
-    "author?",
-    "authors?",
-    "caricaturist",
-    "cinematographer",
-    "composer",
-    "composer, lyricist",
-    "composer; lyrcist",
-    "composer; lyricist",
-    "composer; performer",
-    "composer; recording artist",
-    "composer?",
-    "creator",
-    "creators",
-    "designer",
-    "developer",
-    "director",
-    "editor",
-    "engraver",
-    "ethnographer",
-    "fabricator",
-    "filmmaker",
-    "filmmaker, anthropologist",
-    "garden designer",
-    "graphic artist",
-    "illustrator",
-    "inventor",
-    "landscape Architect",
-    "landscape architect",
-    "landscape architect, photographer",
-    "landscape designer",
-    "lantern slide maker",
-    "lithographer",
-    "lyicist",
-    "lyicrist",
-    "lyricist",
-    "lyricist; composer",
-    "maker",
-    "maker (possibly)",
-    "maker or owner",
-    "maker; inventor",
-    "original artist",
-    "performer",
-    "performer; composer; lyricist",
-    "performer; recording artist",
-    "performers",
-    "performing artist; recipient",
-    "performing artist; user",
-    "photgrapher",
-    "photograher",
-    "photographer",
-    "photographer and copyright claimant",
-    "photographer and/or colorist",
-    "photographer or collector",
-    "photographer?",
-    "photographerl",
-    "photographerphotographer",
-    "photographers",
-    "photographers?",
-    "photographer}",
-    "photographic firm",
-    "photogrpaher",
-    "playwright",
-    "poet",
-    "possible maker",
-    "printer",
-    "printmaker",
-    "producer",
-    "recordig artist",
-    "recording artist",
-    "recording artist; composer",
-    "recordist",
-    "recordng artist",
-    "sculptor",
-    "shipbuilder",
-    "shipbuilders",
-    "shipping firm",
-    "weaver",
-    "weaver or owner",
+  'Architect',
+  'Artist',
+  'Artists/Makers',
+  'Attributed to',
+  'Author',
+  'Cabinet Maker',
+  'Ceramist',
+  'Circle of',
+  'Co-Designer',
+  'Creator',
+  'Decorator',
+  'Designer',
+  'Draftsman',
+  'Editor',
+  'Embroiderer',
+  'Engraver',
+  'Etcher',
+  'Executor',
+  'Follower of',
+  'Graphic Designer',
+  'Instrumentiste',
+  'Inventor',
+  'Landscape Architect',
+  'Landscape Designer',
+  'Maker',
+  'Model Maker/maker',
+  'Modeler',
+  'Painter',
+  'Photographer',
+  'Possible attribution',
+  'Possibly',
+  'Possibly by',
+  'Print Maker',
+  'Printmaker',
+  'Probably',
+  'School of',
+  'Sculptor',
+  'Studio of',
+  'Workshop of',
+  'Weaver',
+  'Writer',
+  'animator',
+  'architect',
+  'artist',
+  'artist.',
+  'artist?',
+  'artist attribution',
+  'author',
+  'author.',
+  'author?',
+  'authors?',
+  'caricaturist',
+  'cinematographer',
+  'composer',
+  'composer, lyricist',
+  'composer; lyrcist',
+  'composer; lyricist',
+  'composer; performer',
+  'composer; recording artist',
+  'composer?',
+  'creator',
+  'creators',
+  'designer',
+  'developer',
+  'director',
+  'editor',
+  'engraver',
+  'ethnographer',
+  'fabricator',
+  'filmmaker',
+  'filmmaker, anthropologist',
+  'garden designer',
+  'graphic artist',
+  'illustrator',
+  'inventor',
+  'landscape Architect',
+  'landscape architect',
+  'landscape architect, photographer',
+  'landscape designer',
+  'lantern slide maker',
+  'lithographer',
+  'lyicist',
+  'lyicrist',
+  'lyricist',
+  'lyricist; composer',
+  'maker',
+  'maker (possibly)',
+  'maker or owner',
+  'maker; inventor',
+  'original artist',
+  'performer',
+  'performer; composer; lyricist',
+  'performer; recording artist',
+  'performers',
+  'performing artist; recipient',
+  'performing artist; user',
+  'photgrapher',
+  'photograher',
+  'photographer',
+  'photographer and copyright claimant',
+  'photographer and/or colorist',
+  'photographer or collector',
+  'photographer?',
+  'photographerl',
+  'photographerphotographer',
+  'photographers',
+  'photographers?',
+  'photographer}',
+  'photographic firm',
+  'photogrpaher',
+  'playwright',
+  'poet',
+  'possible maker',
+  'printer',
+  'printmaker',
+  'producer',
+  'recordig artist',
+  'recording artist',
+  'recording artist; composer',
+  'recordist',
+  'recordng artist',
+  'sculptor',
+  'shipbuilder',
+  'shipbuilders',
+  'shipping firm',
+  'weaver',
+  'weaver or owner'
 ]
 
 def creator?(value)
