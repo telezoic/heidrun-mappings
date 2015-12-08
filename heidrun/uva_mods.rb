@@ -6,12 +6,12 @@
 #                    displayLabel="Use of the Collection">
 rights_map = lambda do |record|
   rights = record['mods:accessCondition']
-    .match_attribute(:type, 'restrictionOnAccess')
-    .match_attribute(:displayLabel, 'Access to the Collection')
+           .match_attribute(:type, 'restrictionOnAccess')
+           .match_attribute(:displayLabel, 'Access to the Collection')
 
   rights.concat(record['mods:accessCondition']
-    .match_attribute(:type, 'useAndReproduction')
-    .match_attribute(:displayLabel, 'Use of the Collection'))
+        .match_attribute(:type, 'useAndReproduction')
+        .match_attribute(:displayLabel, 'Use of the Collection'))
 end
 
 # dcterms:subject
@@ -20,7 +20,7 @@ end
 #   <name type="personal" authority="lcnaf"><namePart ...>...
 subject_map = lambda do |record|
   subjects = record['mods:subject'].match_attribute(:authority, 'lcsh')
-                                   .field('mods:topic')
+             .field('mods:topic')
 
   subjects.concat(record['mods:subject']
                     .match_attribute(:authority, 'lcsh')
@@ -33,56 +33,55 @@ subject_map = lambda do |record|
 end
 
 Krikri::Mapper.define(:uva_mods,
-                      :parser => Krikri::ModsParser) do
-
+                      parser: Krikri::ModsParser) do
   # edm:dataProvider
   #   <location><physicalLocation>
-  dataProvider :class => DPLA::MAP::Agent do
+  dataProvider class: DPLA::MAP::Agent do
     label record.field('mods:location', 'mods:physicalLocation')
   end
 
   # edm:isShownAt
   #   <location><url access="object in context">
-  isShownAt :class => DPLA::MAP::WebResource do
+  isShownAt class: DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
               .match_attribute(:access, 'object in context')
   end
 
   # edm:preview
   #   <url access="preview">
-  preview :class => DPLA::MAP::WebResource do
+  preview class: DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
               .match_attribute(:access, 'preview')
   end
 
   # edm:provider
   #   University of Virginia Library
-  provider :class => DPLA::MAP::Agent do
+  provider class: DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/uva'
     label 'University of Virginia Library'
   end
 
   # dpla:originalRecord
   #   DPLA
-  originalRecord :class => DPLA::MAP::WebResource do
+  originalRecord class: DPLA::MAP::WebResource do
     uri record_uri
   end
 
   # edm:hasView
   #   <PhysicalDescription><internetMediaType>
-  hasView :class => DPLA::MAP::WebResource do
+  hasView class: DPLA::MAP::WebResource do
     dcformat record.field('mods:physicalDescription', 'mods:internetMediaType')
   end
 
   # dpla:SourceResource
-  sourceResource :class => DPLA::MAP::SourceResource do
+  sourceResource class: DPLA::MAP::SourceResource do
     # dcterms:isPartOf
     #   <relatedItem type="series" ...><titleInfo><title>[IGNORE <nonSort>]
-    collection :class => DPLA::MAP::Collection,
-               :each => record.field('mods:relatedItem')
+    collection class: DPLA::MAP::Collection,
+               each: record.field('mods:relatedItem')
                               .match_attribute(:type, 'series')
                               .field('mods:titleInfo', 'mods:title'),
-               :as => :collection do
+               as: :collection do
       title collection
     end
     # <nonSort> is a child of <titleInfo> so quietly ignored - JB
@@ -90,22 +89,22 @@ Krikri::Mapper.define(:uva_mods,
     # dcterms:creator
     #   <name type="personal" authority="lcnaf">
     #   or <name type="corporate" authority="lcnaf">
-    creator :class => DPLA::MAP::Agent,
-            :each => record.field('mods:name')
-                           .match_attribute(:authority, 'lcnaf')
-                           .match_attribute(:type) { |type|
-                             ['personal', 'corporate'].include?(type)
-                           },
-            :as => :creator do
+    creator class: DPLA::MAP::Agent,
+            each: record.field('mods:name')
+                        .match_attribute(:authority, 'lcnaf')
+                        .match_attribute(:type) { |type|
+                          %w(personal corporate).include?(type)
+                        },
+            as: :creator do
       providedLabel creator
     end
 
     # dc:date
     #   <dateIssued keyDate="yes">[value] Date</dateIssued>
     #   NOTE: if value is "unknown," do not display
-    date :class => DPLA::MAP::TimeSpan,
-         :each => record.field('mods:dateIssued'),
-         :as => :date do
+    date class: DPLA::MAP::TimeSpan,
+         each: record.field('mods:dateIssued'),
+         as: :date do
       providedLabel date
     end
     # TODO: this is in collection-description-mods.xml
@@ -136,17 +135,19 @@ Krikri::Mapper.define(:uva_mods,
 
     # dcterms:spatial
     #   <originInfo><place><placeTerm ...>
-    spatial :class => DPLA::MAP::Place,
-            :each => record.field('mods:originInfo', 'mods:place', 'mods:placeTerm'),
-            :as => :place do
+    spatial class: DPLA::MAP::Place,
+            each: record.field('mods:originInfo',
+                               'mods:place',
+                               'mods:placeTerm'),
+            as: :place do
       providedLabel place
     end
 
     # dcterms:publisher
     #   <originInfo><publisher>
-    publisher :class => DPLA::MAP::Agent,
-              :each => record.field('mods:originInfo', 'mods:publisher'),
-              :as => :publisher do
+    publisher class: DPLA::MAP::Agent,
+              each: record.field('mods:originInfo', 'mods:publisher'),
+              as: :publisher do
       providedLabel publisher
     end
 
@@ -161,9 +162,9 @@ Krikri::Mapper.define(:uva_mods,
     #   <subject authority="lcsh"><topic>;
     #   <subject authority="lcsh"><name ...><name Part>;
     #   <name type="personal" authority="lcnaf"><namePart ...>...
-    subject :class => DPLA::MAP::Concept,
-            :each => record.map(&subject_map).flatten,
-            :as => :subject do
+    subject class: DPLA::MAP::Concept,
+            each: record.map(&subject_map).flatten,
+            as: :subject do
       providedLabel subject
     end
     # <name Part> should be <namePart> - JB
