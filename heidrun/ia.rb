@@ -21,9 +21,9 @@ collections = {
 #     <collection>[code name that must be mapped to the full official name]</collection>
 #     NOTE: <collection> should appear first in the list of dataProviders
 data_provider_map = lambda do |record|
-  data_provider = record['metadata'].field('collection').map { |c| collections[c] }
+  data_provider = record['collection'].select { |c| collections[c] }
 
-  data_provider.concat(record['metadata'].field('contributor'))
+  data_provider.concat(record['contributor'])
 end
 
 # dcterms:identifier
@@ -32,12 +32,12 @@ end
 #     <call_number>Call number: "[value]"</call_number>;
 #     <datafield tag="035" ind1=" " ind2=" "><subfield code="a">[value]</subfield>
 identifier_map = lambda do |record|
-  identifier = record['metadata'].field('identifier')
+  identifier = record['identifier']
 
-  identifier.concat(record['metadata'].field('call_number'))
+  identifier.concat(record['call_number'])
 
-  identifier.concat(record['metadata']
-                      .field('marc', 'record', 'datafield')
+  identifier.concat(record['marc']
+                      .field('record', 'datafield')
                       .match_attribute(:tag, '035')
                       .match_attribute(:ind1, ' ')
                       .match_attribute(:ind2, ' ')
@@ -55,20 +55,18 @@ end
 #     <datafield tag="785"> [Add ". " between subfields; Do not include subfield w];
 #     <datafield tag="780"> [Add ". " between subfields; Do not include subfield w]
 relation_map = lambda do |record|
-  relation = record['metadata'].field('marc', 'record', 'datafield')
+  relation = record['marc'].field('record', 'datafield')
     .match_attribute(:tag) { |tag| %w(440 490 800 810 830).include?(tag) }
 
-  relation.concat(record['metadata'].field('marc', 'record', 'datafield')
+  relation.concat(record['marc'].field('record', 'datafield')
                     .match_attribute(:tag, '785')
                     .field('subfield')
-                    .match_attribute(:code) { |code| code != 'w' }
-                    .join('. '))
+                    .match_attribute(:code) { |code| code != 'w' })
 
-  relation.concat(record['metadata'].field('marc', 'record', 'datafield')
+  relation.concat(record['marc'].field('record', 'datafield')
                     .match_attribute(:tag, '780')
                     .field('subfield')
-                    .match_attribute(:code) { |code| code != 'w' }
-                    .join('. '))
+                    .match_attribute(:code) { |code| code != 'w' })
 end
 
 Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
@@ -84,7 +82,7 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
   # edm:isShownAt
   #   META.XML <identifier-access>
   isShownAt class: DPLA::MAP::WebResource do
-    uri record.field('metadata', 'identifier-access')
+    uri record.field('identifier-access')
   end
 
   # edm:preview
@@ -112,7 +110,7 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     # dcterms:isPartOf
     #   meta.xml <sponsor>
     collection class: DPLA::MAP::Collection,
-               each: record.field('metadata', 'sponsor'),
+               each: record.field('sponsor'),
                as: :collection do
       title collection
     end
@@ -120,7 +118,7 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     # dcterms:creator
     #   META.xml <creator>
     creator class: DPLA::MAP::Agent,
-            each: record.field('metadata', 'creator'),
+            each: record.field('creator'),
             as: :creator do
       providedLabel creator
     end
@@ -128,18 +126,18 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     # dc:date
     #   META.xml <date>
     date class: DPLA::MAP::TimeSpan,
-         each: record.field('metadata', 'date'),
+         each: record.field('date'),
          as: :date do
       providedLabel date
     end
 
     # dcterms:description
     #   meta.xml <description>
-    description record.field('metadata', 'description')
+    description record.field('description')
 
     # dcterms:extent
     #   MARC.XML <datafield tag="300">[any subfields]
-    extent record.field('metadata', 'marc', 'record', 'datafield')
+    extent record.field('marc', 'record', 'datafield')
       .match_attribute(:tag, '300')
 
     # dcterms:identifier
@@ -151,17 +149,17 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
 
     # dcterms:language
     #   META.XML <language>
-    language record.field('metadata', 'language')
+    language record.field('language')
 
     # dcterms:spatial
     #   MARC.xml
     #     <datafield tag="6##"><subfield code="z">
     #     [ANY 600-699 data field but only subfield "z" which is a geographic indicator]
     spatial class: DPLA::MAP::Place,
-            each: record.field('metadata', 'marc', 'record', 'datafield')
+            each: record.field('marc', 'record', 'datafield')
                 .match_attribute(:tag) { |tag| tag.start_with?('6') }
                 .field('subfield')
-                .match_attibute(:code, 'z'),
+                .match_attribute(:code, 'z'),
             as: :place do
       providedLabel place
     end
@@ -169,7 +167,7 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     # dcterms:publisher
     #   meta.xml <publisher>
     publisher class: DPLA::MAP::Agent,
-              each: record.field('metadata', 'publisher'),
+              each: record.field('publisher'),
               as: :publisher do
       providedLabel publisher
     end
@@ -202,18 +200,18 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     # dcterms:subject
     #   meta.xml <subject>
     subject class: DPLA::MAP::Concept,
-            each: record.field('metadata', 'subject'),
+            each: record.field('subject'),
             as: :subject do
       providedLabel subject
     end
 
     # dcterms:title
     #   META.xml <title></title>", "<volume></volume> [if "volume exists"]
-    title record.fields(['metadata', 'title'], ['metadata', 'volume'])
+    title record.fields('title', 'volume')
 
     # dcterms:type
     #   META.xml <mediatype> when the value matches DCMIType
-    dctype record.field('metadata', 'mediatype')
+    dctype record.field('mediatype')
     # TODO: enhancement to match on DCMIType? - JB
   end
 end
