@@ -58,15 +58,17 @@ relation_map = lambda do |record|
   relation = record['marc'].field('record', 'datafield')
     .match_attribute(:tag) { |tag| %w(440 490 800 810 830).include?(tag) }
 
-  relation.concat(record['marc'].field('record', 'datafield')
-                    .match_attribute(:tag, '785')
-                    .field('subfield')
-                    .match_attribute(:code) { |code| code != 'w' })
+  %w(785 780).each do |tag|
+    fld = record['marc'].field('record', 'datafield')
+                      .match_attribute(:tag, tag)
+                      .field('subfield')
+                      .match_attribute(:code) { |code| code != 'w' }
+                      .map(&:value).to_a.join('. ')
 
-  relation.concat(record['marc'].field('record', 'datafield')
-                    .match_attribute(:tag, '780')
-                    .field('subfield')
-                    .match_attribute(:code) { |code| code != 'w' })
+    relation.concat([fld]) unless fld.blank?
+  end
+
+  relation
 end
 
 Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
