@@ -57,7 +57,7 @@ Krikri::Mapper.define(:uva_mods,
   # edm:provider
   #   University of Virginia Library
   provider class: DPLA::MAP::Agent do
-    uri 'http://dp.la/api/contributor/uva'
+    uri 'http://dp.la/api/contributor/virginia'
     label 'University of Virginia Library'
   end
 
