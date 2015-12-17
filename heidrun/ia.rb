@@ -21,6 +21,7 @@ collections = {
 #     <collection>[code name that must be mapped to the full official name]</collection>
 #     NOTE: <collection> should appear first in the list of dataProviders
 data_provider_map = lambda do |record|
+# TODO: just key if not in hash
   data_provider = record['collection'].select { |c| collections[c] }
 
   data_provider.concat(record['contributor'])
@@ -97,7 +98,7 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
   # edm:provider
   #   "Internet Archive" (hard coded)
   provider class: DPLA::MAP::Agent do
-    uri 'http://dp.la/api/contributor/ia'
+    uri 'http://dp.la/api/contributor/internet_archive'
     label 'Internet Archive'
   end
 
@@ -191,6 +192,7 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     #    content available through the Archive may be governed by
     #    local, national, and/or international laws and regulations,
     #    and your use of such content is solely at your own risk."
+    # TODO: change to backslashes
     rights <<-EOS
       Access to the Internet Archive’s Collections is granted
       for scholarship and research purposes only. Some of the
