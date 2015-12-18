@@ -2,94 +2,99 @@
 # dcterms:contributor
 #   <name (any type)><namePart> WHEN <role><roleTerm (any type)> = contributor
 contributor_map = lambda do |r|
-  r['mods:name'].select { |name| name['mods:role'].map(&:value).first.strip == 'contributor' }
-    .field('mods:namePart')
+  r['mods:name'].select do |name|
+    name['mods:role'].map(&:value).first.strip == 'contributor'
+  end.field('mods:namePart')
 end
 
 # dcterms:creator
 #   <name (any type)><namePart> WHEN <role><roleTerm> = creator
 creator_map = lambda do |r|
-  r['mods:name'].select { |name| name['mods:role'].map(&:value).first.strip == 'creator' }
-    .field('mods:namePart')
+  r['mods:name'].select do |name|
+    name['mods:role'].map(&:value).first.strip == 'creator'
+  end.field('mods:namePart')
 end
 
 # dcterms:title
 #   <titleInfo><title> when there is no type attribute on <titleInfo>,
 #     i.e. excluding <titleInfo type="abbreviated>
 title_map = lambda do |r|
-  title_infos = r['mods:titleInfo'].select { |ti| ti.node.attribute_nodes.count == 0 }
+  title_infos = r['mods:titleInfo'].select do |ti|
+    ti.node.attribute_nodes.count == 0
+  end
   title_infos.field('mods:title')
 end
 
-Krikri::Mapper.define(:bhl_mods, :parser => Krikri::ModsParser) do
-  provider :class => DPLA::MAP::Agent do
+Krikri::Mapper.define(:bhl_mods, parser: Krikri::ModsParser) do
+  provider class: DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/bhl'
     label 'Biodiversity Heritage Library'
   end
 
   # edm:dataProvider
-  #   <note type=”ownership”>
-  dataProvider :class => DPLA::MAP::Agent do
+  #   <note type="ownership">
+  dataProvider class: DPLA::MAP::Agent do
     providedLabel record.field('mods:note')
       .match_attribute(:type, 'ownership')
   end
 
   # edm:isShownAt
-  #   <location><url access="raw object" usage=”primary”>
-  isShownAt :class => DPLA::MAP::WebResource do
+  #   <location><url access="raw object" usage="primary">
+  isShownAt class: DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
               .match_attribute(:access, 'raw object')
               .match_attribute(:usage, 'primary')
   end
 
   # edm:preview
-  #   <location><url access="object in context" usage=”primary display”>
-  preview :class => DPLA::MAP::WebResource do
+  #   <location><url access="object in context" usage="primary display">
+  preview class: DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
               .match_attribute(:access, 'object in context')
               .match_attribute(:usage, 'primary display')
     dcformat record.field('mods:physicalDescription', 'mods:internetMediaType')
   end
 
-  sourceResource :class => DPLA::MAP::SourceResource do
+  sourceResource class: DPLA::MAP::SourceResource do
     # dcterms:contributor
-    #   <name (any type)><namePart> WHEN <role><roleTerm (any type)> = contributor
-    contributor :class => DPLA::MAP::Agent do
+    #   <name (any type)><namePart>
+    #     WHEN <role><roleTerm (any type)> = contributor
+    contributor class: DPLA::MAP::Agent do
       providedLabel record.map(&contributor_map).flatten
     end
 
     # dcterms:creator
     #   <name (any type)><namePart> WHEN <role><roleTerm> = creator
-    creator :class => DPLA::MAP::Agent do
+    creator class: DPLA::MAP::Agent do
       providedLabel record.map(&creator_map).flatten
     end
 
     # dc:date
-    #   <originInfo><dateOther type=”issueDate” keyDate=”yes”> 
-    date :class => DPLA::MAP::TimeSpan,
-         :each => record.field('mods:originInfo', 'mods:dateOther')
-                        .match_attribute(:type, 'issueDate')
-                        .match_attribute(:keyDate, 'yes'),
-         :as => :created do
+    #   <originInfo><dateOther type="issueDate" keyDate="yes">
+    date class: DPLA::MAP::TimeSpan,
+         each: record.field('mods:originInfo', 'mods:dateOther')
+                     .match_attribute(:type, 'issueDate')
+                     .match_attribute(:keyDate, 'yes'),
+         as: :created do
       providedLabel created
     end
 
     # dcterms:description
-    #   <note type=”content”>
+    #   <note type="content">
     description record.fields('mods:note')
       .match_attribute(:type, 'content')
 
     # dc:format
-    #   <physicalDescription><form authority=”marcform”>
+    #   <physicalDescription><form authority="marcform">
     dcformat record.field('mods:physicalDescription', 'mods:form')
       .match_attribute(:authority, 'marcform')
 
     # edm:hasType
-    #   <genre authority=”marcgt”>
-    genre :class => DPLA::MAP::Concept,
-          :each => record.field('mods:genre')
-                         .match_attribute(:authority, 'marcgt'),
-            :as => :genre do
+    #   <genre authority="marcgt">
+    genre class: DPLA::MAP::Concept,
+          each: record.field('mods:genre')
+                      .match_attribute(:authority, 'marcgt'),
+          as: :genre do
       providedLabel genre
     end
 
@@ -98,28 +103,28 @@ Krikri::Mapper.define(:bhl_mods, :parser => Krikri::ModsParser) do
     identifier record.field('mods:identifier')
 
     # dcterms:language
-    #   <language><languageTerm authority=”iso639-2b” type=”text”>
-    language :class => DPLA::MAP::Controlled::Language,
-             :each => record.field('mods:language', 'mods:languageTerm')
+    #   <language><languageTerm authority="iso639-2b" type="text">
+    language class: DPLA::MAP::Controlled::Language,
+             each: record.field('mods:language', 'mods:languageTerm')
                             .match_attribute(:type, 'text')
                             .match_attribute(:authority, 'iso639-2b'),
-             :as => :lang do
+             as: :lang do
       providedLabel lang
     end
 
     # dcterms:spatial
     #   <subject><geographic>
-    spatial :class => DPLA::MAP::Place,
-            :each => record.field('mods:subject', 'mods:geographic'),
-            :as => :place do
+    spatial class: DPLA::MAP::Place,
+            each: record.field('mods:subject', 'mods:geographic'),
+            as: :place do
       providedLabel place
     end
 
     # dcterms:publisher
     #   originInfo><publisher>
-    publisher :class => DPLA::MAP::Agent,
-              :each => record.fields('mods:originInfo', 'mods:publisher'),
-              :as => :publisher do
+    publisher class: DPLA::MAP::Agent,
+              each: record.fields('mods:originInfo', 'mods:publisher'),
+              as: :publisher do
       providedLabel publisher
     end
 
@@ -133,17 +138,17 @@ Krikri::Mapper.define(:bhl_mods, :parser => Krikri::ModsParser) do
 
     # dcterms:subject
     #   <subject><topic>
-    subject :class => DPLA::MAP::Concept,
-            :each => record.field('mods:subject', 'mods:topic'),
-            :as => :subject do
+    subject class: DPLA::MAP::Concept,
+            each: record.field('mods:subject', 'mods:topic'),
+            as: :subject do
       providedLabel subject
     end
 
     # dcterms:temporal
     #   <subject><temporal>
-    temporal :class => DPLA::MAP::TimeSpan,
-             :each => record.field('mods:subject', 'mods:temporal'),
-             :as => :date_string do
+    temporal class: DPLA::MAP::TimeSpan,
+             each: record.field('mods:subject', 'mods:temporal'),
+             as: :date_string do
       providedLabel date_string
     end
 
