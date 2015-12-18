@@ -13,6 +13,14 @@ creator_map = lambda do |r|
     .field('mods:namePart')
 end
 
+# dcterms:title
+#   <titleInfo><title> when there is no type attribute on <titleInfo>,
+#     i.e. excluding <titleInfo type="abbreviated>
+title_map = lambda do |r|
+  title_infos = r['mods:titleInfo'].select { |ti| ti.node.attribute_nodes.count == 0 }
+  title_infos.field('mods:title')
+end
+
 Krikri::Mapper.define(:bhl_mods, :parser => Krikri::ModsParser) do
   provider :class => DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/bhl'
@@ -142,10 +150,7 @@ Krikri::Mapper.define(:bhl_mods, :parser => Krikri::ModsParser) do
     # dcterms:title
     #   <titleInfo><title> when there is no type attribute on <titleInfo>,
     #     i.e. excluding <titleInfo type="abbreviated>
-    title record.field('mods:titleInfo')
-           .match_attribute(:type) { |attr| attr != 'abbreviated' }
-           .field('mods:title')
-    # TODO: how to test for the absence of attributes? - JB
+    title record.map(&title_map).flatten
 
     # dcterms:type
     #   <typeOfResource>
