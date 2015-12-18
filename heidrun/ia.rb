@@ -1,5 +1,6 @@
 # coding: utf-8
 
+# TODO: this list is from the old system and is likely out of date
 collections = {
   'blc' => 'Boston Library Consortium',
   'cambridgepubliclibrary' => 'Cambridge Public Library',
@@ -21,8 +22,13 @@ collections = {
 #     <collection>[code name that must be mapped to the full official name]</collection>
 #     NOTE: <collection> should appear first in the list of dataProviders
 data_provider_map = lambda do |record|
-# TODO: just key if not in hash
-  data_provider = record['collection'].select { |c| collections[c] }
+  data_provider = record['collection'].map do |c|
+    if collections.has_key?(c.value)
+      collections[c.value]
+    else
+      c
+    end
+  end
 
   data_provider.concat(record['contributor'])
 end
