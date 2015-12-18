@@ -12,18 +12,21 @@ collections = {
   'MontanaStateLibrary' => 'Montana State Library',
   'yivoinstitutelibrary' => 'YIVO Institute Library',
   'guggenheimlibrary' => 'Guggenheim Library',
-  'lbiperiodicals' => 'Leo Baeck Institute Library at the Center for Jewish History',
+  'lbiperiodicals' =>
+  'Leo Baeck Institute Library at the Center for Jewish History',
   'frickartreferencelibrary' => 'Frick Art Reference Library'
 }
 
 # edm:dataProvider
 #   Meta.xml
 #     <contributor>;
-#     <collection>[code name that must be mapped to the full official name]</collection>
+#     <collection>
+#       [code name that must be mapped to the full official name]
+#     </collection>
 #     NOTE: <collection> should appear first in the list of dataProviders
 data_provider_map = lambda do |record|
   data_provider = record['collection'].map do |c|
-    if collections.has_key?(c.value)
+    if collections.key?(c.value)
       collections[c.value]
     else
       c
@@ -37,7 +40,8 @@ end
 #   META.XML
 #     <identifier> may be the same thing;
 #     <call_number>Call number: "[value]"</call_number>;
-#     <datafield tag="035" ind1=" " ind2=" "><subfield code="a">[value]</subfield>
+#     <datafield tag="035" ind1=" " ind2=" ">
+#       <subfield code="a">[value]</subfield>
 identifier_map = lambda do |record|
   identifier = record['identifier']
 
@@ -59,8 +63,10 @@ end
 #     <datafield tag="800"> or
 #     <datafield tag="810"> or
 #     <datafield tag="830">;
-#     <datafield tag="785"> [Add ". " between subfields; Do not include subfield w];
-#     <datafield tag="780"> [Add ". " between subfields; Do not include subfield w]
+#     <datafield tag="785">
+#       [Add ". " between subfields; Do not include subfield w];
+#     <datafield tag="780">
+#       [Add ". " between subfields; Do not include subfield w]
 relation_map = lambda do |record|
   relation = record['marc'].field('record', 'datafield')
     .match_attribute(:tag) { |tag| %w(440 490 800 810 830).include?(tag) }
@@ -78,11 +84,13 @@ relation_map = lambda do |record|
   relation
 end
 
-Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
+Krikri::Mapper.define(:ia, parser: Krikri::XmlParser) do
   # edm:dataProvider
   #   Meta.xml
   #     <contributor>;
-  #     <collection>[code name that must be mapped to the full official name]</collection>
+  #     <collection>
+  #       [code name that must be mapped to the full official name]
+  #     </collection>
   #     NOTE: <collection> should appear first in the list of dataProviders
   dataProvider class: DPLA::MAP::Agent do
     label record.map(&data_provider_map).flatten
@@ -95,10 +103,11 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
   end
 
   # edm:preview
-  #   We should pull these from Google Books API if we can't unblink the gifs in IA
-  #preview class: DPLA::MAP::WebResource do
-  #  uri ???
-  #end
+  #   We should pull these from Google Books API
+  #     if we can't unblink the gifs in IA
+  # preview class: DPLA::MAP::WebResource do
+  #   uri ???
+  # end
   # TODO: what to do here? - JB
 
   # edm:provider
@@ -153,7 +162,8 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     #   META.XML
     #     <identifier> may be the same thing;
     #     <call_number>Call number: "[value]"</call_number>;
-    #     <datafield tag="035" ind1=" " ind2=" "><subfield code="a">[value]</subfield>
+    #     <datafield tag="035" ind1=" " ind2=" ">
+    #       <subfield code="a">[value]</subfield>
     identifier record.map(&identifier_map).flatten
 
     # dcterms:language
@@ -163,7 +173,8 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     # dcterms:spatial
     #   MARC.xml
     #     <datafield tag="6##"><subfield code="z">
-    #     [ANY 600-699 data field but only subfield "z" which is a geographic indicator]
+    #     [ANY 600-699 data field
+    #      but only subfield "z" which is a geographic indicator]
     spatial class: DPLA::MAP::Place,
             each: record.field('marc', 'record', 'datafield')
                 .match_attribute(:tag) { |tag| tag.start_with?('6') }
@@ -188,12 +199,14 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     #     <datafield tag="800"> or
     #     <datafield tag="810"> or
     #     <datafield tag="830">;
-    #     <datafield tag="785"> [Add ". " between subfields; Do not include subfield w];
-    #     <datafield tag="780"> [Add ". " between subfields; Do not include subfield w]
+    #     <datafield tag="785">
+    #       [Add ". " between subfields; Do not include subfield w];
+    #     <datafield tag="780">
+    #       [Add ". " between subfields; Do not include subfield w]
     relation record.map(&relation_map).flatten
 
     # dc:rights
-    #   "Access to the Internet Archive’s Collections is granted
+    #   "Access to the Internet Archive's Collections is granted
     #    for scholarship and research purposes only. Some of the
     #    content available through the Archive may be governed by
     #    local, national, and/or international laws and regulations,
@@ -202,7 +215,8 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
             for scholarship and research purposes only. Some of the
             content available through the Archive may be governed by
             local, national, and/or international laws and regulations,
-            and your use of such content is solely at your own risk.'.gsub(/\s+/, ' ')
+            and your use of such content is solely at your own risk.'
+                  .gsub(/\s+/, ' ')
 
     # dcterms:subject
     #   meta.xml <subject>
