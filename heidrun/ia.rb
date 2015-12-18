@@ -198,14 +198,11 @@ Krikri::Mapper.define(:ia, :parser => Krikri::XmlParser) do
     #    content available through the Archive may be governed by
     #    local, national, and/or international laws and regulations,
     #    and your use of such content is solely at your own risk."
-    # TODO: change to backslashes
-    rights <<-EOS
-      Access to the Internet Archive’s Collections is granted
-      for scholarship and research purposes only. Some of the
-      content available through the Archive may be governed by
-      local, national, and/or international laws and regulations,
-      and your use of such content is solely at your own risk.
-    EOS
+    rights 'Access to the Internet Archive’s Collections is granted
+            for scholarship and research purposes only. Some of the
+            content available through the Archive may be governed by
+            local, national, and/or international laws and regulations,
+            and your use of such content is solely at your own risk.'.gsub(/\s+/, ' ')
 
     # dcterms:subject
     #   meta.xml <subject>
