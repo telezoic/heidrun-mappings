@@ -1,5 +1,3 @@
-# coding: utf-8
-
 CREATOR_LABEL_VALUES = [
   'Architect',
   'Artist',
@@ -340,8 +338,7 @@ Krikri::Mapper.define(:smithsonian,
     #   <freetext category="physicalDescription" label="Medium">;
     #   <object_type>
     #
-    # JB - actually I'm seeing this in indexedStructured
-    # but the spec doesn't seem to care about the parent anyway
+    # <object_type> should say <indexedStructured><object_type>
     dcformat record.map(&extract_format).flatten
 
     # dcterms:identifier
