@@ -234,6 +234,33 @@ subject_map = lambda do |record|
                     })
 end
 
+# dcterms:spatial
+#   <geoLocation><L5 type=[City | Town]></geoLocation >;
+#   <geoLocation><L3 type=[State | Province]></geoLocation>;
+#   <geoLocation><L4 type=[County | Island]></geoLocation >;
+#   <geoLocation>
+#     <Other type =[eg: Neighborhood, Street, Desert, Park, etc.]>
+#   </geoLocation>;
+#   <geoLocation><L2 type=[Country | Nation]></geoLocation>;
+#   <geoLocation><points label=[text] dates="yyyy-yyyy"><point>
+#     <latitude type=[decimal | degrees]>
+#     <longitude type=[decimal | degrees]></point></geoLocation>;
+#   # IF NO GEOGRAPHIC HIERARCHY PROVIDED THEN:
+#      <freetext category="place" label="[n]">[value];
+#   <place>[value];
+#   <place label=""Origin"">[value] *Duplicate values should be ignored."
+spatial_map = lambda do |record|
+  location = %w(L5 L4 L3 L2).map do |level|
+    record['indexedStructured'].field('geoLocation', level)
+  end.map(&:values).select { |loc| !loc.empty?  }.join(', ')
+
+  if location.empty?
+    record['freetext'].field('place')
+  else
+    location
+  end
+end
+
 Krikri::Mapper.define(:smithsonian,
                       :parser => Krikri::SmithsonianParser) do
   # edm:provider
@@ -367,15 +394,10 @@ Krikri::Mapper.define(:smithsonian,
     #      <freetext category="place" label="[n]">[value];
     #   <place>[value];
     #   <place label=""Origin"">[value] *Duplicate values should be ignored."
-    spatial :class => DPLA::MAP::Place,
-            :each => record.if
-                           .field('indexedStructured', 'geoLocation')
-                           .fields('L2', 'L3', 'L4', 'L5', 'points', 'Other')
-                           .else { |r| r.field('freetext', 'place') },
-            :as => :place do
-      providedLabel place
-      lat place.field('point', 'latitude')
-      long place.field('point', 'longitude')
+    spatial :class => DPLA::MAP::Place do
+      providedLabel record.map(&spatial_map).flatten
+      lat record.field('indexedStructured', 'geoLocation', 'points', 'point', 'latitude')
+      long record.field('indexedStructured', 'geoLocation', 'points', 'point', 'longitude')
     end
 
     # dcterms:publisher
@@ -435,9 +457,6 @@ Krikri::Mapper.define(:smithsonian,
     # dcterms:type
     #   <online media type>. If it does not match a DCMI type, map it to image
     dctype record.field('indexedStructured', 'online_media_type')
-    # TODO: should defaulting to 'Image' be handled as an enrichment? - JB
-    # DCMI Types: Collection, Dataset, Event, Image, InteractiveResource,
-    #             MovingImage, PhysicalObject, Service, Software, Sound,
-    #             StillImage, Text
+    # TODO: Enrichment to default to 'image' if not a DCMI type
   end
 end
