@@ -103,17 +103,15 @@ Krikri::Mapper.define(:uva_mods,
     #   <dateIssued keyDate="yes">[value] Date</dateIssued>
     #   NOTE: if value is "unknown," do not display
     date class: DPLA::MAP::TimeSpan,
-         each: record.field('mods:originInfo', 'mods:dateCreated')
-                     .match_attribute(:keyDate, 'yes'),
+         each: record.if
+                     .field('mods:extension', 'mods:dateIssued')
+                     .match_attribute(:keyDate, 'yes')
+                     .else { |r| r.field('mods:originInfo',
+                                         'mods:dateCreated')
+                            .match_attribute(:keyDate, 'yes') },
          as: :date do
       providedLabel date
     end
-    # TODO: <dateIssued> is in collection-description-mods.xml
-    #       the harvester is adding it to the record at:
-    #         each: record.field('mods:extension', 'mods:dateIssued'),
-    #       however these don't have keyDate
-    #       there is <originInfo><dateCreated> in the item
-    #       which has keyDate - so using that for now
 
     # dcterms:description
     #   <physicalDescription><note displayLabel="condition">
