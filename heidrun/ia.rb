@@ -1,6 +1,3 @@
-# coding: utf-8
-
-# TODO: this list is from the old system and is likely out of date
 collections = {
   'blc' => 'Boston Library Consortium',
   'cambridgepubliclibrary' => 'Cambridge Public Library',
@@ -102,25 +99,11 @@ Krikri::Mapper.define(:ia, parser: Krikri::XmlParser) do
     uri record.field('identifier-access')
   end
 
-  # edm:preview
-  #   We should pull these from Google Books API
-  #     if we can't unblink the gifs in IA
-  # preview class: DPLA::MAP::WebResource do
-  #   uri ???
-  # end
-  # TODO: what to do here? - JB
-
   # edm:provider
   #   "Internet Archive" (hard coded)
   provider class: DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/internet_archive'
     label 'Internet Archive'
-  end
-
-  # edm:hasView
-  #   "application/pdf"
-  hasView class: DPLA::MAP::WebResource do
-    dcformat 'application/pdf'
   end
 
   # dpla:SourceResource
@@ -211,12 +194,11 @@ Krikri::Mapper.define(:ia, parser: Krikri::XmlParser) do
     #    content available through the Archive may be governed by
     #    local, national, and/or international laws and regulations,
     #    and your use of such content is solely at your own risk."
-    rights 'Access to the Internet Archive’s Collections is granted
-            for scholarship and research purposes only. Some of the
-            content available through the Archive may be governed by
-            local, national, and/or international laws and regulations,
-            and your use of such content is solely at your own risk.'
-                  .gsub(/\s+/, ' ')
+    rights 'Access to the Internet Archive\'s Collections is granted ' \
+           'for scholarship and research purposes only. Some of the ' \
+           'content available through the Archive may be governed by ' \
+           'local, national, and/or international laws and regulations, ' \
+           'and your use of such content is solely at your own risk.'
 
     # dcterms:subject
     #   meta.xml <subject>
@@ -233,6 +215,6 @@ Krikri::Mapper.define(:ia, parser: Krikri::XmlParser) do
     # dcterms:type
     #   META.xml <mediatype> when the value matches DCMIType
     dctype record.field('mediatype')
-    # TODO: enhancement to match on DCMIType? - JB
+    # TODO: Enhancement required to match on DCMIType
   end
 end
