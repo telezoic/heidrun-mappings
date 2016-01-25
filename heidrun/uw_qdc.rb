@@ -51,7 +51,7 @@ Krikri::Mapper.define(:uw_qdc,
 
     description record.field('dc:description')
 
-    dcformat record.field('dc:format')
+    dcformat record.fields('dc:format', 'dc:type', 'dcterms:medium')
 
     identifier record.field('dc:identifier')
 
@@ -83,8 +83,8 @@ Krikri::Mapper.define(:uw_qdc,
       providedLabel temporal
     end
     
-    title record.field('dc:title')
+    title record.fields('dc:title', 'dcterms:alternative')
 
-    dctype record.field('dc:type')
+    dctype record.fields('dc:type', 'dcterms:medium')
   end
 end
