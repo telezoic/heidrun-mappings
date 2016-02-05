@@ -69,8 +69,10 @@ Krikri::Mapper.define(:uva_mods,
 
   # edm:hasView
   #   <PhysicalDescription><internetMediaType>
+  # Amended following review:
+  #   we should be mapping <physicalDescription><form> only
   hasView class: DPLA::MAP::WebResource do
-    dcformat record.field('mods:physicalDescription', 'mods:internetMediaType')
+    dcformat record.field('mods:physicalDescription', 'mods:form')
   end
 
   # dpla:SourceResource
@@ -134,10 +136,11 @@ Krikri::Mapper.define(:uva_mods,
 
     # dcterms:spatial
     #   <originInfo><place><placeTerm ...>
+    # Amended following review:
+    #   map <place> instead of <placeTerm>
     spatial class: DPLA::MAP::Place,
             each: record.field('mods:originInfo',
-                               'mods:place',
-                               'mods:placeTerm'),
+                               'mods:place'),
             as: :place do
       providedLabel place
     end
