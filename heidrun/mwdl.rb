@@ -42,6 +42,10 @@ Krikri::Mapper.define(:mwdl, parser: Krikri::PrimoParser) do
     uri record.field('sear:LINKS', 'sear:thumbnail')
   end
 
+  originalRecord class: DPLA::MAP::WebResource do
+    uri record_uri
+  end
+
   sourceResource class: DPLA::MAP::SourceResource do
     collection class: DPLA::MAP::Collection,
                each: record.field(*Krikri::PrimoParser.search('lsr13')),

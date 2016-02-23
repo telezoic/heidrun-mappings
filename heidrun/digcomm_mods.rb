@@ -133,6 +133,10 @@ Krikri::Mapper.define(:digcomm_mods, :parser => Krikri::ModsParser) do
          .match_attribute(:access, 'object in context')
   end
 
+  originalRecord :class => DPLA::MAP::WebResource do
+    uri record_uri
+  end
+
   sourceResource :class => DPLA::MAP::SourceResource do
     alternative record.field('mods:titleInfo')
                       .match_attribute(:type, 'alternative')
