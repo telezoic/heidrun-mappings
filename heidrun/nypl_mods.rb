@@ -167,6 +167,10 @@ Krikri::Mapper.define(:nypl_mods,
                     }
   end
 
+  originalRecord class: DPLA::MAP::WebResource do
+    uri record_uri
+  end
+
   sourceResource class: DPLA::MAP::SourceResource do
     # Look for the last <relatedItem type="host"> and grab value nested in
     # <title<relatedItem

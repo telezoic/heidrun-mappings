@@ -55,6 +55,10 @@ Krikri::Mapper.define(:bhl_mods, parser: Krikri::ModsParser) do
     dcformat record.field('mods:physicalDescription', 'mods:internetMediaType')
   end
 
+  originalRecord class: DPLA::MAP::WebResource do
+    uri record_uri
+  end
+
   sourceResource class: DPLA::MAP::SourceResource do
     # dcterms:contributor
     #   <name (any type)><namePart>

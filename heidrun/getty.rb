@@ -43,6 +43,10 @@ Krikri::Mapper.define(:getty,
     uri record.field('sear:LINKS', 'sear:thumbnail')
   end
 
+  originalRecord class: DPLA::MAP::WebResource do
+    uri record_uri
+  end
+
   sourceResource class: DPLA::MAP::SourceResource do
     # TODO: Enrichment needed to split title fields on semicolons
     title record.fields(Krikri::PrimoParser.display('title'),
