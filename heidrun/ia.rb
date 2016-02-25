@@ -81,6 +81,19 @@ relation_map = lambda do |record|
   relation
 end
 
+# dcterms:title
+#   META.xml <title></title>", "<volume></volume> [if "volume exists"]
+title_map = lambda do |record|
+  title = record['title'].first.value
+  volume = record['volume'].first
+
+  if volume
+    title += ", #{volume.value}"
+  end
+
+  title
+end
+
 Krikri::Mapper.define(:ia, parser: Krikri::XmlParser) do
   # edm:dataProvider
   #   Meta.xml
@@ -210,7 +223,7 @@ Krikri::Mapper.define(:ia, parser: Krikri::XmlParser) do
 
     # dcterms:title
     #   META.xml <title></title>", "<volume></volume> [if "volume exists"]
-    title record.fields('title', 'volume')
+    title record.map(&title_map).flatten
 
     # dcterms:type
     #   META.xml <mediatype> when the value matches DCMIType
