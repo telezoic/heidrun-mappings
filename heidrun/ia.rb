@@ -119,6 +119,10 @@ Krikri::Mapper.define(:ia, parser: Krikri::XmlParser) do
     label 'Internet Archive'
   end
 
+  originalRecord :class => DPLA::MAP::WebResource do
+    uri record_uri
+  end
+
   # dpla:SourceResource
   sourceResource class: DPLA::MAP::SourceResource do
     # dcterms:isPartOf
