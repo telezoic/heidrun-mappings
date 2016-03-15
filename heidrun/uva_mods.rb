@@ -69,10 +69,8 @@ Krikri::Mapper.define(:uva_mods,
 
   # edm:hasView
   #   <PhysicalDescription><internetMediaType>
-  # Amended following review:
-  #   we should be mapping <physicalDescription><form> only
   hasView class: DPLA::MAP::WebResource do
-    dcformat record.field('mods:physicalDescription', 'mods:form')
+    dcformat record.field('mods:physicalDescription', 'mods:internetMediaType')
   end
 
   # dpla:SourceResource
@@ -127,7 +125,7 @@ Krikri::Mapper.define(:uva_mods,
 
     # dc:format
     #   <physicalDescription>
-    dcformat record.field('mods:physicalDescription')
+    dcformat record.field('mods:physicalDescription', 'mods:form')
 
     # dcterms:identifier
     #   <identifier type="uri" ...>
