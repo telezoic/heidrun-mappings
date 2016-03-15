@@ -262,7 +262,8 @@ spatial_map = lambda do |record|
 end
 
 Krikri::Mapper.define(:smithsonian,
-                      :parser => Krikri::SmithsonianParser) do
+                      :parser => Krikri::XmlParser,
+                      :parser_args => '//doc') do
   # edm:provider
   #   Smithsonian Institution
   provider :class => DPLA::MAP::Agent do
