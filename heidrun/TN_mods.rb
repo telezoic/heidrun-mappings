@@ -1,7 +1,7 @@
 Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
   provider :class => DPLA::MAP::Agent do
     uri 'http://dp.la/api/contributor/tn'
-    label 'Tennessee Digital Library'
+    label 'Digital Library of Tennessee'
   end
 
   dataProvider :class => DPLA::MAP::Agent do
@@ -12,7 +12,7 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
     uri record.field('mods:location', 'mods:url')
         .match_attribute(:usage) { |attr| attr.downcase.starts_with? 'primary' }
         .match_attribute(:access, 'object in context')
-    dcformat record.field('mods:physicalDescription', 
+    dcformat record.field('mods:physicalDescription',
                           'mods:internetMediaType')
     rights record.field('mods:accessCondition')
             .match_attribute(:displayLabel, 'Digital Object Rights')
@@ -21,7 +21,7 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
   object :class => DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
          .match_attribute(:access, 'raw object')
-  end 
+  end
 
   preview :class => DPLA::MAP::WebResource do
     uri record.field('mods:location', 'mods:url')
@@ -54,7 +54,7 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
                 :as => :contrib do
       providedLabel contrib.field('mods:namePart')
     end
-    
+
     creator :class => DPLA::MAP::Agent,
             :each => record.field('mods:name')
                     .select { |name| name['mods:role']
@@ -68,10 +68,10 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
     date :class => DPLA::MAP::TimeSpan,
          :each => record.field('mods:originInfo'),
          :as => :created do
-      
+
       providedLabel created.field('mods:dateCreated').match_attribute(:keyDate, 'yes')
                      .reject_attribute(:point)
-      
+
       self.begin created.field('mods:dateCreated').match_attribute(:point, 'start')
       self.end created.field('mods:dateCreated').match_attribute(:point, 'end')
     end
@@ -98,19 +98,19 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
 
     spatial :class => DPLA::MAP::Place,
             :each => record.field('mods:subject')
-                    .select { |val| val.child?('mods:geographic') || 
+                    .select { |val| val.child?('mods:geographic') ||
                               val.child?('mods:cartographics') },
             :as => :place do
 
       providedLabel place.field('mods:geographic')
       lat place.field('mods:cartographics', 'mods:coordinates')
 
-      # We need this to select the 'valueURI' attribute. We can't yet use 
+      # We need this to select the 'valueURI' attribute. We can't yet use
       # or publish this data, so we can pick it up on the next harvest.
       #
       # exactMatch place.field('mods:geographic')
     end
-    
+
     publisher :class => DPLA::MAP::Agent,
               :each => record.field('mods:originInfo','mods:publisher'),
               :as => :origin_publisher do
@@ -123,17 +123,17 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
             .reject_attribute(:displayLabel, 'Project')
             .field('mods:titleInfo')
             .fields('mods:url', 'mods:title')
-    
+
     isReplacedBy record.field('mods:relatedItem')
                 .match_attribute(:type, 'isReferencedBy')
                 .field('mods:titleInfo')
                 .fields('mods:url', 'mods:title')
-    
+
     replaces record.field('mods:relatedItem')
             .match_attribute(:type, 'references')
             .field('mods:titleInfo')
             .fields('mods:url', 'mods:title')
-    
+
     rights record.field('mods:accessCondition')
             .reject_attribute(:displayLabel, 'Digital Object Rights')
 
@@ -145,7 +145,7 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
             :as => :subject do
       providedLabel subject
     end
-    
+
     temporal :class => DPLA::MAP::TimeSpan,
              :each => record.field('mods:subject', 'mods:temporal'),
              :as => :date_string do
@@ -157,7 +157,7 @@ Krikri::Mapper.define(:tn_mods, :parser => Krikri::ModsParser) do
            .field('mods:title')
 
     dctype record.map { |r|
-      if r.child?('mods:typeOfResource') 
+      if r.child?('mods:typeOfResource')
         r['mods:typeOfResource'].map(&:value)
       else
         r['mods:format'].map(&:value)
