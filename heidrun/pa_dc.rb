@@ -94,7 +94,9 @@ Krikri::Mapper.define(:pa_dc, :parser => Krikri::OaiDcParser) do
    uri record.map( &second_identifier ).flatten
   end
 
-  intermediateProvider record.field('dc:source')
+  intermediateProvider :class => DPLA::MAP::Agent, :each => record.field('dc:source'), :as => :source do
+    providedLabel source
+  end
 
   preview :class => DPLA::MAP::WebResource do
     uri record.field('dc:identifier').last_value
