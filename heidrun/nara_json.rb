@@ -65,7 +65,7 @@ format_date = lambda do |date|
               date['month'].values.first, 
               date['day'].values.first]
              .compact.map { |e| "%02d" % e }.join '-'
-  return if date_str.empty?
+  return '' if date_str.empty?
   qualifier = date['dateQualifier'].field('termName').values.first
 
   return date_str if qualifier.nil?
