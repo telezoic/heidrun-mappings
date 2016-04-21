@@ -10,14 +10,29 @@
 #   https://thumbnails.calisphere.org/clip/1536:1024/39e015bc8fd770a69775811891784282
 cdl_preview = lambda do |r|
   base_url = 'https://thumbnails.calisphere.org/clip/'
-  dimensions = r['reference_image_dimensions'].first.value
+  # dimensions = r['reference_image_dimensions'].first.value
   md5_hash = r['reference_image_md5'].first.value
   image_url = nil
 
-  if !md5_hash.nil? && !dimensions.nil?
-    image_url = base_url + dimensions.gsub(':','x') + '/' + md5_hash
+  if !md5_hash.nil? # && !dimensions.nil?
+    image_url = base_url + '150x150/' + md5_hash
+    # image_url = base_url + dimensions.gsub(':','x') + '/' + md5_hash
   end
   image_url
+end
+
+# if campus_name exists then dataProivder is campus name, else set to
+# repository_name. If neither is set then return nil
+cdl_provider = lambda do |r|
+  campus_name = r['campus_name']
+  repo_name = r['repository_name']
+  provider = nil
+  if !campus_name.nil?
+    provider = campus_name
+  elsif !repo_name.nil?
+    provider = repo_name
+  end
+  provider
 end
 
 # California Digital Library Mapping
@@ -87,7 +102,7 @@ Krikri::Mapper.define(:cdl, parser: Krikri::JsonParser ) do
 
     rights record.fields('rights_ss', 'rights_note_ss', 'rights_date_ss')
 
-    rightsHolder record.field('rightsholder_ss')
+    rightsHolder record.field('rights_holder_ss')
 
     subject :class => DPLA::MAP::Concept,
       :each => record.field('subject_ss'),
@@ -107,7 +122,7 @@ Krikri::Mapper.define(:cdl, parser: Krikri::JsonParser ) do
   end
 
   dataProvider :class => DPLA::MAP::Agent do
-    providedLabel record.fields('campus_name', 'repository_name')
+    providedLabel record.map( &cdl_provider ).flatten
   end
 
   isShownAt :class => DPLA::MAP::WebResource do
