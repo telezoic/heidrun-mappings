@@ -27,8 +27,8 @@ cdl_provider = lambda do |r|
   campus_name = r['campus_name']
   repo_name = r['repository_name']
   provider = nil
-  if !campus_name.nil?
-    provider = campus_name
+  if !campus_name.nil? && !repo_name.nil?
+    provider = campus_name + ', ' + repo_name
   elsif !repo_name.nil?
     provider = repo_name
   end
