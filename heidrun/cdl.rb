@@ -10,23 +10,22 @@
 #   https://thumbnails.calisphere.org/clip/1536:1024/39e015bc8fd770a69775811891784282
 cdl_preview = lambda do |r|
   base_url = 'https://thumbnails.calisphere.org/clip/'
-  # dimensions = r['reference_image_dimensions'].first.value
-  md5_hash = r['reference_image_md5'].first.value
+  md5_hash = r['reference_image_md5'].first ? r['reference_image_md5'].first.value : nil
   image_url = nil
 
-  if !md5_hash.nil? # && !dimensions.nil?
+  if !md5_hash.nil?
     image_url = base_url + '150x150/' + md5_hash
-    # image_url = base_url + dimensions.gsub(':','x') + '/' + md5_hash
   end
   image_url
 end
 
-# if campus_name exists then dataProivder is campus name, else set to
-# repository_name. If neither is set then return nil
+# if campus_name exists then prepend value to repository name
+# else only repository name is used.
 cdl_provider = lambda do |r|
-  campus_name = r['campus_name']
-  repo_name = r['repository_name']
+  campus_name = r['campus_name'].first ? r['campus_name'].first.value : nil
+  repo_name = r['repository_name'].first ? r['repository_name'].first.value : nil
   provider = nil
+
   if !campus_name.nil? && !repo_name.nil?
     provider = campus_name + ', ' + repo_name
   elsif !repo_name.nil?
